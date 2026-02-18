@@ -1,0 +1,15 @@
+[project]
+name = "yt-app"
+version = "0.1.0"
+description = "Retrieve YouTube Transcripts"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pylint>=4.0.4",
+    "yt-lib",
+    "youtube-transcript-api>=1.2.4",
+    "yt-dlp>=2026.2.4",
+]
+
+[tool.uv.sources]
+yt-lib = { git = "https://github.com/Mark-USN/yt_lib.git" }
