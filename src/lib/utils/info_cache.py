@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+ 
 from dataclasses import asdict, dataclass, fields
 from datetime import datetime, timezone
 import json
@@ -76,7 +76,7 @@ def _video_metadata_from_json(text: str) -> YtdlpMetadata:
     allowed = {f.name for f in fields(YtdlpMetadata)}
     filtered = {k: v for k, v in raw.items() if k in allowed}
 
-    # This will still raise if required fields are missing; that’s good—corrupt cache should fail loudly.
+    # This will still raise if required fields are missing; thatâ€™s goodâ€”corrupt cache should fail loudly.
     return YtdlpMetadata(**filtered)  # pyright: ignore[reportArgumentType]
 
 
@@ -203,10 +203,10 @@ class InfoManager:
                 meta.video_id = video_id
                 vid = video_id
             else:
-               raise ValueError(f"Could not extract video_id from {vid} or {meta.url}")
+                raise ValueError(f"Could not extract video_id from {vid} or {meta.url}")
 
         # 20260206 MMH Don't want to clobber jason file if it already exists.
-        # If the video_id is the same but the URL is different, that’s a bit
+        # If the video_id is the same but the URL is different, thatâ€™s a bit
         # weird but we can just update the metadata and keep the same .info file.
 
  
@@ -232,7 +232,7 @@ class InfoManager:
         if num_entries < 0:
             raise ValueError("num_entries must be >= 0")
 
-        # Ensure we’re operating on a correctly sorted view
+        # Ensure weâ€™re operating on a correctly sorted view
         self.yt_source_list.sort(key=lambda t: t[0], reverse=True)
 
         stale = self.yt_source_list[num_entries:]
@@ -261,6 +261,7 @@ class InfoManager:
             "no_warnings": True,     # <- key
             "skip_download": True,
             "noprogress": True,
+            "format": "bestvideo+bestaudio/best",
         }
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -269,7 +270,7 @@ class InfoManager:
             raise ValueError("yt-dlp returned non-dict info. %s", info)
 
         # youtube_ids.VideoMetadata.from_yt_dlp expects dict[str, object]
-        meta = VideoMetadata.from_yt_dlp(url=url, info=info)  # pyright: ignore[reportArgumentType]
+        meta = YtdlpMetadata.from_yt_dlp(url=url, info=info)  # pyright: ignore[reportArgumentType]
         self.cache_VideoMetadata(meta)
 
         return meta  # pyright: ignore[reportArgumentType]
@@ -322,7 +323,7 @@ class InfoManager:
                         except Exception as e:  # pylint: disable=broad-exception-caught
                             logger.warning("Error reading metadata from %s: %s", info_file, e)
                             break  # fallback to fetching fresh metadata
-            # If we didn’t find a valid cache entry, fetch fresh metadata.
+            # If we didnâ€™t find a valid cache entry, fetch fresh metadata.
             return self._fetch_yt_dlp_metadata(url)
         except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error("Error fetching metadata for %s: %s", url, e)
