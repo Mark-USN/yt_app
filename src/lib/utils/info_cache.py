@@ -1,17 +1,22 @@
+""" 
+    Tracks the history of YouTube sources (video URLs) and their metadata, 
+    with a simple file-based cache.
+"""
 from __future__ import annotations
- 
 from dataclasses import asdict, dataclass, fields
 from datetime import datetime, timezone
 import json
-import textwrap
+# import textwrap
 # import logging
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Iterable
-from yt_dlp import YoutubeDL
+# from typing import Any, Iterable
+# from yt_dlp import YoutubeDL
+from lib.utils.globals import APP_NAME, APP_PATHS
 from yt_lib.yt_ids import YtdlpMetadata, YoutubeIdKind, extract_video_id
-from yt_lib.utils.paths import resolve_cache_paths
-from yt_lib.utils.log_utils import get_logger, log_tree
+from yt_lib.ytdlp_info import YtdlpInfo, fetch_ytdlp_info_object, YtdlpFormat, read_YtdlpInfo, write_YtdlpInfo
+# from yt_lib.utils.paths import resolve_cache_paths
+from yt_lib.utils.log_utils import get_logger   # , log_tree
 
 logger = get_logger(__name__)
 
@@ -24,24 +29,26 @@ def filetime_to_datetime(file: Path) -> datetime:
 
 @dataclass(slots=True, frozen=True)
 class YouTubeSource:
+    """Represents a YouTube source with its ID, URL, and title."""
     kind: YoutubeIdKind
     id: str
     url: str
     title: str
- 
+
     @classmethod
-    def from_VideoMetadata(cls, *, meta: dict[str, object]) -> YouTubeSource:
+    def from_YtdlpInfo(cls, *, info: YtdlpInfo) -> YouTubeSource:
+        """ Grabs the data from data returned from the cache. """
         return cls(
             kind=YoutubeIdKind.VIDEO,
-            url=meta["url"],
-            id=meta["video_id"],
-            title=meta["title"],
+            url=info.get("webpage_url") if info.get("webpage_url") else info.get("original_url"),
+            id=info.get("id"),
+            title=info.get("title"),
         )
 
-@dataclass(slots=True)
-class PromptChoice:
-    title: str
-    url: str
+# @dataclass(slots=True)
+# class PromptChoice:
+#     title: str
+#     url: str
 
 def _atomic_write_text(path: Path, text: str, *, encoding: str = "utf-8") -> None:
     """Write text atomically by replace()'ing a temp file in the same directory."""
@@ -59,25 +66,6 @@ def _atomic_write_text(path: Path, text: str, *, encoding: str = "utf-8") -> Non
     tmp.replace(path)
 
 
-def _video_metadata_to_json(meta: YtdlpMetadata) -> str:
-    # Keep it human-readable and stable for diffs.
-    return json.dumps(asdict(meta), ensure_ascii=False, indent=2)
-
-
-def _video_metadata_from_json(text: str) -> YtdlpMetadata:
-    """
-    Load VideoMetadata from JSON while tolerating future added fields
-    (e.g., 'web_url') or other extras.
-    """
-    raw = json.loads(text)
-    if not isinstance(raw, dict):
-        raise ValueError("Expected JSON object for VideoMetadata.")
-
-    allowed = {f.name for f in fields(YtdlpMetadata)}
-    filtered = {k: v for k, v in raw.items() if k in allowed}
-
-    # This will still raise if required fields are missing; that’s good—corrupt cache should fail loudly.
-    return YtdlpMetadata(**filtered)  # pyright: ignore[reportArgumentType]
 
 
 class InfoManager:
@@ -90,9 +78,9 @@ class InfoManager:
       with Paths pointing to .info files.
     """
 
-    def __init__(self, *, app_name: str = "transcripts", start: Path | None = None) -> None:
-        start = start or Path(__file__)
-        self.cache_dir: Path = resolve_cache_paths(app_name=app_name, start=start).app_cache_dir
+    # def __init__(self, *, app_name: str = "transcripts", start: Path | None = None) -> None:
+    def __init__(self) -> None:
+        self.cache_dir: Path = APP_PATHS.user_cache_dir
         self.yt_source_list: list[tuple[float, YouTubeSource]] = []
         self.refresh_index()
 
@@ -103,12 +91,12 @@ class InfoManager:
     def refresh_index(self) -> None:
         """Rebuild the in-memory file index from disk (newest -> oldest)."""
         entries: list[tuple[float, YouTubeSource]] = []
-        for p in self.cache_dir.glob("*.info"):
+        for p in self.cache_dir.glob("*.json"):
             if not p.is_file():
                 continue
             try:
-                meta = _video_metadata_from_json(p.read_text(encoding="utf-8"))
-                yt_source: YouTubeSource = YouTubeSource.from_VideoMetadata(meta=asdict(meta))
+                info = read_YtdlpInfo(p)
+                yt_source: YouTubeSource = YouTubeSource.from_YtdlpInfo(info=asdict(info))
                 entries.append((p.stat().st_mtime, yt_source))
             except OSError:
                 continue
@@ -123,23 +111,20 @@ class InfoManager:
             return self.info_path_for(yt_source.id)
         return None
 
-    def get_latest_metadata(self) -> YtdlpMetadata | None:
-        """Return VideoMetadata from the newest cache entry, or None if none readable."""
+    def get_latest_YtdlpInfo(self) -> YtdlpInfo | None:
+        """Return YtdlpInfo from the newest cache entry, or None if none readable."""
         latest_file = self.get_latest_file()
         if not latest_file or not latest_file.is_file():
             return None
-        try:
-            return _video_metadata_from_json(latest_file.read_text(encoding="utf-8"))
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            logger.warning("Error reading metadata from %s: %s", latest_file, e)
-            return None
+        return read_YtdlpInfo(latest_file)
 
     # ----------------------------
     # File naming + stale cleanup
     # ----------------------------
 
     def info_path_for(self, video_id: str) -> Path:
-        return self.cache_dir / f"{video_id}.info"
+        """Get the expected .info file path for a given video_id."""
+        return self.cache_dir / f"{video_id}.json"
 
     def remove_stale_files_for_video_id(self, video_id: str, *, keep: Path | None = None) -> None:
         """
@@ -162,7 +147,29 @@ class InfoManager:
                 logger.warning("Failed to delete stale cache file %s: %s", p, e)
 
         # Remove from index too
-        self.yt_source_list = [(mt, yt_src) for (mt,yt_src) in 
+        self.yt_source_list = [(mt, yt_src) for (mt,yt_src) in
+                               self.yt_source_list if yt_src.id != video_id]
+
+    def remove_from_cache(self, video_id: str) -> None:
+        """
+        Remove stale cache artifacts for the same base video_id.
+
+        Deletes any files in cache_dir whose name starts with '<video_id>.'
+        (e.g. old '<video_id>.url', '<video_id>.json', '<video_id>.json.lock', etc.).
+        """
+        prefix = f"{video_id}."
+        for p in self.cache_dir.iterdir():
+            if not p.is_file():
+                continue
+            if not p.name.startswith(prefix):
+                continue
+            try:
+                p.unlink(missing_ok=True)
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                logger.warning("Failed to delete cache file %s: %s", p, e)
+
+        # Remove from index too
+        self.yt_source_list = [(mt, yt_src) for (mt,yt_src) in
                                self.yt_source_list if yt_src.id != video_id]
 
     def _prepend_to_index(self, yt_source: YouTubeSource) -> None:
@@ -175,7 +182,7 @@ class InfoManager:
             return
 
         # Drop any existing entry for this video ID, then prepend.
-        self.yt_source_list = [(mt, yt_src) for (mt, yt_src) in 
+        self.yt_source_list = [(mt, yt_src) for (mt, yt_src) in
                                self.yt_source_list if yt_src.id != yt_source.id]
         self.yt_source_list.insert(0, (mtime, yt_source))
 
@@ -186,40 +193,41 @@ class InfoManager:
     # Write/update cache entries
     # ----------------------------
 
-    def cache_VideoMetadata(self, meta: YtdlpMetadata) -> None:
+    def cache_YtdlpInfo(self, info: YtdlpInfo) -> None:
         """
-        Cache VideoMetadata for a YouTube source.
+        Cache YtdlpInfo for a YouTube source.
 
         Behavior:
-          - determines a video_id (prefers yt_source.id; falls back to extracting from URL if needed)
+          - determines a video_id (prefers yt_source.id; 
+            falls back to extracting from URL if needed)
           - removes stale entries for the same base video_id
           - writes <video_id>.info (JSON VideoMetadata)
           - prepends the new entry to the in-memory index
         """
-        vid = meta.video_id
-        # ensure it's a real video id if caller passed a URL or something odd
-        if video_id := extract_video_id(vid) != vid:
-            if video_id := extract_video_id(meta.url):
-                meta.video_id = video_id
+        vid = info.get("id")
+        url = info.get("webpage_url") if info.get("webpage_url") else info.get("original_url")
+        if video_id := extract_video_id(url):
+            if vid != video_id: 
+                logger.warn("Extracted video_id %s from URL does not match info id %s. URL: %s", video_id, vid, url)
+                self.remove_from_cache(vid)  # Remove old cache entries for the mismatched ID to prevent confusion.
+                info["id"] = video_id  # Override with extracted ID to ensure consistency"]
                 vid = video_id
-            else:
-                raise ValueError(f"Could not extract video_id from {vid} or {meta.url}")
+        else:
+            raise ValueError(f"Could not extract video_id from {vid} or {info.url}")
 
-        # 20260206 MMH Don't want to clobber jason file if it already exists.
+        # 20260206 MMH Don't want to clobber json file if it already exists.
         # If the video_id is the same but the URL is different, that’s a bit
         # weird but we can just update the metadata and keep the same .info file.
 
- 
         # If your VideoMetadata.video_id should drive the filename, you can enforce it here:
         info_file = self.info_path_for(vid)
 
        # Remove stale artifacts (including old .url caches) before writing.
         self.remove_stale_files_for_video_id(video_id, keep=info_file)
+        write_YtdlpInfo(info_file, info)
+        logger.info("Cached Ytdlp_info to %s.", info_file)
 
-        _atomic_write_text(info_file, _video_metadata_to_json(meta), encoding="utf-8")
-        logger.info("Cached YouTube VideoMetadata to %s.", info_file)
-
-        yt_source = YouTubeSource.from_VideoMetadata(meta=asdict(meta))
+        yt_source = YouTubeSource.from_YtdlpInfo(info=asdict(info))
         self._prepend_to_index(yt_source)
         # return info_file
 
@@ -249,33 +257,6 @@ class InfoManager:
         self.yt_source_list = keep
 
     # ----------------------------
-    # yt-dlp metadata
-    # ----------------------------
-
-    
-    def _fetch_yt_dlp_metadata(self, url: str) -> YtdlpMetadata:
-        """Use yt-dlp to extract video metadata from a YouTube URL."""
-#     def fetch_info(url: str) -> dict[str, object]:
-        ydl_opts: dict[str, object] = {
-            "quiet": True,
-            "no_warnings": True,     # <- key
-            "skip_download": True,
-            "noprogress": True,
-            "format": "bestvideo+bestaudio/best",
-        }
-        with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-
-        if not isinstance(info, dict):
-            raise ValueError("yt-dlp returned non-dict info. %s", info)
-
-        # youtube_ids.VideoMetadata.from_yt_dlp expects dict[str, object]
-        meta = YtdlpMetadata.from_yt_dlp(url=url, info=info)  # pyright: ignore[reportArgumentType]
-        self.cache_VideoMetadata(meta)
-
-        return meta  # pyright: ignore[reportArgumentType]
-
-    # ----------------------------
     # cached URL list retrieval
     # ----------------------------
 
@@ -290,28 +271,32 @@ class InfoManager:
                 continue
         return urls
 
-    def get_cached_prompts(self) -> list[PromptChoice]:
+    def get_cached_prompts(self) -> list[dict[str,str]]:
+    # def get_cached_prompts(self) -> list[PromptChoice]:
         """Return a list of title and URL tuples from the current cache entries, newest first."""
-        choices: list[PromptChoice] = []
+        # choices: list[PromptChoice] = []
+        choices: list[dict[str,str]] = []
 
         for _, yt_source in self.yt_source_list:
             try:
-                choices.append(PromptChoice(title=yt_source.title, url=yt_source.url))
+                # List entries as Video ID: Title
+                key = yt_source.id + ": " + yt_source.title
+                choices.append({key,yt_source.url})
             except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.warning("Error reading URL or Title from %s: %s", yt_source, e)
                 continue
         return choices
 
 
-    def get_video_metadata(self, url: str) -> YtdlpMetadata:
-        """ Get VideoMetadata for a URL, checking the cache for the url 
+    def get_YtdlpInfo(self, url: str) -> YtdlpInfo:
+        """ Get YtdlpInfo for a URL, checking the cache for the url 
             and if found update the cache list.  If it is not in the cache 
             get it from yt-dlp and put it in the top of the list.
         """
+        vid = extract_video_id(url)
+        if not vid:
+            raise ValueError(f"URL does not contain a Video Id. URL:  {url}")
         try:
-            vid = extract_video_id(url)
-            if not vid:
-                raise ValueError("URL does not contain a Video Id. %s", url)
             for _, yt_src in self.yt_source_list:
                 if yt_src.id == vid:
                     info_file = self.info_path_for(yt_src.id)
@@ -319,12 +304,13 @@ class InfoManager:
                         try:
                             info_file.touch()  # update mtime to reflect recent access
                             self.refresh_index()  # re-sort index after mtime update
-                            return _video_metadata_from_json(info_file.read_text(encoding="utf-8"))
+                            return read_YtdlpInfo(info_file)
                         except Exception as e:  # pylint: disable=broad-exception-caught
                             logger.warning("Error reading metadata from %s: %s", info_file, e)
                             break  # fallback to fetching fresh metadata
             # If we didn’t find a valid cache entry, fetch fresh metadata.
-            return self._fetch_yt_dlp_metadata(url)
+            return fetch_ytdlp_info_object(url)
         except Exception as e:  # pylint: disable=broad-exception-caught
-            logger.error("Error fetching metadata for %s: %s", url, e)
+            logger.error("Error fetching YtdlpInfo for %s: %s", url, e)
             raise
+

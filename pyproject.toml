@@ -12,4 +12,4 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-yt-lib = { git = "https://github.com/Mark-USN/yt_lib.git" }
+yt-lib = { path = "C:\Users\mhenw\Source\repos\Mark-USN\yt_lib" }

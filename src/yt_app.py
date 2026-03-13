@@ -10,43 +10,66 @@ and display metadata + transcript in a GUI.
 
 from __future__ import annotations
 
+
+import time
 from dataclasses import dataclass
-from tkinter import DoubleVar, StringVar, Text, Tk
+from venv import logger
+from tkinter import StringVar, IntVar, Text, Tk
+
 from tkinter import ttk
-from typing import Any
+
 from urllib.parse import urlparse
 
-from yt_lib.yt_ids import extract_video_id
+from yt_lib.yt_ids import extract_video_id, YtdlpMetadata
 from yt_lib.yt_transcript import youtube_json, youtube_sentences, youtube_text
-
+from yt_lib.utils.log_utils import configure_logging, LogConfig, FileLogConfig, get_logger
+from yt_lib.utils.paths import resolve_runtime_dirs, RuntimeDirs
+from lib.utils.globals import APP_NAME, APP_PATHS
 from lib.utils.info_cache import InfoManager
 
+file_log_conf = FileLogConfig(
+        log_dir=APP_PATHS.user_log_dir,
+        log_file_prefix=APP_NAME,
+    )
+log_cfg = LogConfig(root=APP_NAME)
+configure_logging(cfg=log_cfg,
+                  file=file_log_conf,
+                  force=True,
+                  tee_console=False
+                )
+logger = get_logger(__name__)
 
+
+
+def format_hms(duration: int) -> str:
+    """ Turn seconds into hours:minutes:seconds. """
+    return time.strftime("%H:%M:%S", time.gmtime(duration))
 # -----------------------------------------------------------------------------
 # Demo fallback (remove once your cache always returns real metadata)
 # -----------------------------------------------------------------------------
 
+# -----------------------------------------------------------------------------
+# Init default entries
+# -----------------------------------------------------------------------------
 
 @dataclass(slots=True)
-class TestInfo:
-    video_id: str = "6bHDQtVfsCM"
-    title: str = "Python List Comprehension (Visually Explained) | The Cleanest Way to Code | #Python Course 33"
-    url: str = "https://www.youtube.com/watch?v=6bHDQtVfsCM"
-    trans_type: str = "transcript"
-    video_type: str = "mp4"
-    video_res: str = "1080p"
-    fps: float = 30.0
-    duration: str = "15:00"
-    video_size: str = "100 MB"
-    description: str = """
-Visually explained how Python List Comprehensions simplify loops and make your code cleaner and faster.
-List Comprehension is one of the most powerful ways to write elegant, efficient, and readable Python code.
-"""
-    transcript: str = """
-All right, my friends. Now we have reached the final advanced technique, the last advanced tool that we have in the
-toolbox in order to work with the data structure in Python. And to be honest, this one is the coolest feature in Python.
-We have the list comprehensions...
-"""
+class InitInfo:
+    """
+        A blank/default metadata object to use on app startup, or when the cache doesn't 
+        have metadata for a url. The UI will just show blanks or defaults for all fields.
+    """
+    video_id: str = " - "
+    title: str = " - "
+    url: str = " - "
+    # transcript_type: str = "json"
+    # out_format:str = "markdown"
+    video_type: str = " - "
+    video_res: str = " - "
+    fps: int = 0
+    duration: int =  0
+    video_size: int = 0
+    description: str = """- Description -"""
+    transcript: str = """- Transcript -"""
 
 
 # -----------------------------------------------------------------------------
@@ -56,65 +79,81 @@ We have the list comprehensions...
 
 @dataclass(slots=True)
 class UiVars:
+    """ Holds all Tk variables that widgets bind to, and knows how to apply metadata to them."""
     video_id: StringVar
     title: StringVar
     url: StringVar
     transcript_type: StringVar
+    out_format: StringVar
     video_type: StringVar
+    video_format: StringVar
     resolution: StringVar
-    fps: DoubleVar
+    fps: IntVar
     duration: StringVar
-    file_size: StringVar
+    file_size: IntVar
 
     def clear(self) -> None:
-        self.video_id.set("")
-        self.title.set("")
+        """ Set default values for the widgets. """
+        self.video_id.set(" - ")
+        self.title.set(" - ")
         self.url.set("")
-        self.transcript_type.set("")
-        self.video_type.set("")
-        self.resolution.set("")
-        self.fps.set(0.0)
-        self.duration.set("")
-        self.file_size.set("")
+        self.transcript_type.set("json")
+        self.out_format.set("markdown")
+        self.video_type.set(" - ")
+        self.resolution.set(" - ")
+        self.video_format.set(" - ")
+        self.fps.set(0)
+        self.duration.set(" - ")
+        self.file_size.set(0)
 
-    def apply_metadata(self, info: Any, *, fmt: str, url: str) -> None:
+    def apply_metadata(
+                        self,
+                        info: YtdlpMetadata,
+                        *,
+                        transcript_type: str,
+                        out_format: str,
+                        url: str
+                    ) -> None:
         """
         Convert/cache metadata -> widget variables.
         Keep ALL mapping/formatting rules here.
         """
         # Required
-        self.video_id.set(str(getattr(info, "video_id", "") or ""))
-        self.title.set(str(getattr(info, "title", "") or ""))
-        self.url.set(str(getattr(info, "url", "") or url))
-        self.transcript_type.set(fmt)
-
+        self.video_id.set(str(getattr(info, "video_id", "") or "").strip())
+        self.title.set(str(getattr(info, "title", "") or "").strip())
+        self.url.set(str(getattr(info, "url", "") or url).strip())
+        self.transcript_type.set(transcript_type)
+        self.out_format.set(out_format)
         # Optional / may be absent depending on your cache object
-        self.video_type.set(str(getattr(info, "video_type", "") or ""))
-        self.resolution.set(str(getattr(info, "video_res", "") or ""))
-
+        self.video_type.set(str(getattr(info, "ext", "") or "").strip())
+        self.video_format.set(str(getattr(info, "video_format", "") or "").strip())
+        self.resolution.set(str(getattr(info, "resolution", " - ") or " - "))
         fps = getattr(info, "fps", None)
         try:
-            self.fps.set(float(fps) if fps is not None else 0.0)
+            self.fps.set(int(fps) if fps is not None else 0)
         except (TypeError, ValueError):
-            self.fps.set(0.0)
+            self.fps.set(0)
 
         # duration: store as string for display
-        self.duration.set(str(getattr(info, "duration", "") or ""))
+        self.duration.set(format_hms(getattr(info, "duration", 0) or 0))
 
-        self.file_size.set(str(getattr(info, "video_size", "") or ""))
+        self.file_size.set(int(getattr(info, "filesize", 0) or 0))
 
 
 def make_ui_vars(root: Tk) -> UiVars:
+    """ Factory for the UiVars dataclass, so we can keep all Tk variable creation in one place. """
     return UiVars(
-        video_id=StringVar(root, ""),
-        title=StringVar(root, ""),
+        video_id=StringVar(root, " - "),
+        title=StringVar(root, " - "),
         url=StringVar(root, ""),
-        transcript_type=StringVar(root, ""),
-        video_type=StringVar(root, ""),
-        resolution=StringVar(root, ""),
-        fps=DoubleVar(root, 0.0),
-        duration=StringVar(root, ""),
-        file_size=StringVar(root, ""),
+        transcript_type=StringVar(root, "json"),
+        out_format=StringVar(root, "markdown"),
+        video_type=StringVar(root, " - "),
+        video_format=StringVar(root, " - "),
+        resolution=StringVar(root, " - "),
+        fps=IntVar(root, 0),
+        duration=StringVar(root, "0"),
+        file_size=IntVar(root, 0),
     )
 
 
@@ -124,6 +163,7 @@ def make_ui_vars(root: Tk) -> UiVars:
 
 
 def set_text(widget: Text, value: str) -> None:
+    """ Update disabled Text widgets. """
     widget.configure(state="normal")
     widget.delete("1.0", "end")
     widget.insert("1.0", value)
@@ -132,6 +172,7 @@ def set_text(widget: Text, value: str) -> None:
 
 
 def is_valid_youtube_url(text: str) -> bool:
+    """ Basic check for whether a URL is a valid YouTube video URL. """
     text = text.strip()
     if not text:
         return False
@@ -149,16 +190,17 @@ def is_valid_youtube_url(text: str) -> bool:
 
 
 def populate(
-    *,
-    cmbo_url: ttk.Combobox,
-    out_format: StringVar,
-    cache: InfoManager,
-    ui: UiVars,
-    txt_dscr: Text,
-    txt_out: Text,
-) -> None:
+                *,
+                cmbo_url: ttk.Combobox,
+                cache: InfoManager,
+                ui: UiVars,
+                txt_dscr: Text,
+                txt_out: Text,
+            ) -> None:
+    """ When the user selects a URL or changes the transcript type or output format,
+        update the metadata and transcript areas.
+    """
     url = cmbo_url.get().strip()
-    fmt = out_format.get().strip() or "json"
 
     if not url:
         return
@@ -166,8 +208,16 @@ def populate(
         return
 
     # ---- metadata from cache ----
+    # If the url is valid, we should have metadata for it in the cache.
+    # If not, the cache can return a blank/default metadata object (never None)
+    # and the UI will just show blanks/defaults.
     info = cache.get_video_metadata(url)
-    ui.apply_metadata(info, fmt=fmt, url=url)
+    ui.apply_metadata(
+                        info,
+                        transcript_type=ui.transcript_type.get(),
+                        out_format=ui.out_format.get(),
+                        url=url
+                      )
 
     # After querying the cache, the history will have changed, so refresh the combobox choices.
     choices = cache.get_cached_urls()
@@ -179,7 +229,7 @@ def populate(
     set_text(txt_dscr, desc)
 
     # ---- transcript output ----
-    match fmt:
+    match ui.transcript_type.get().strip():
         case "json":
             transcript = youtube_json(url)
         case "transcript":
@@ -187,7 +237,7 @@ def populate(
         case "sentences":
             transcript = youtube_sentences(url)
         case _:
-            transcript = f"Unknown format: {fmt}"
+            transcript = f"Unknown format: {ui.transcript_type.get()}"
 
     set_text(txt_out, transcript)
 
@@ -200,6 +250,8 @@ def populate(
 
 
 def main() -> None:
+    """ Set up the GUI, load initial data, and bind events. """
+
     cache = InfoManager()
 
     root = Tk()
@@ -210,12 +262,15 @@ def main() -> None:
     # Single place for widget-bound vars
     ui = make_ui_vars(root)
 
-    # Default output format (create early so other widgets can refer to it safely)
-    out_format = StringVar(root, "json")
 
     # Demo: initial content if you want something visible before selection
-    demo = TestInfo()
-    ui.apply_metadata(demo, fmt=out_format.get(), url=demo.url)
+    init = InitInfo()
+    ui.apply_metadata(
+                        init,
+                        transcript_type=ui.transcript_type.get(),
+                        out_format=ui.out_format.get(),
+                        url=init.url
+                    )
 
     content = ttk.Frame(root, padding=(6, 6, 12, 12))
     content.grid(column=0, row=0, sticky=("n", "s", "e", "w"))
@@ -226,10 +281,14 @@ def main() -> None:
     content.columnconfigure(0, weight=1)
     content.rowconfigure(0, weight=1)
 
+    # Two main columns: left for metadata + transcript, right for controls/history
     frm_left = ttk.Frame(content, borderwidth=5, relief="ridge")
     frm_right = ttk.Frame(content, borderwidth=5, relief="ridge")
-    frm_left.grid(column=0, row=0, sticky=("n", "s", "e", "w"))
+    # frm_exit = ttk.Frame(content, borderwidth=5, relief="ridge")
+    frm_exit = ttk.Frame(content, borderwidth=5)
+    frm_left.grid(column=0, row=0, rowspan=2, sticky=("n", "s", "e", "w"))
     frm_right.grid(column=1, row=0, sticky=("n", "s"), padx=(8, 0))
+    frm_exit.grid(column=1, row=1, sticky=("n", "s"), padx=(8, 0))
 
     content.columnconfigure(0, weight=1)  # left expands
     content.columnconfigure(1, weight=0)  # right stays tight
@@ -237,7 +296,7 @@ def main() -> None:
     # Left layout: rows that expand are the text areas
     frm_left.columnconfigure(0, weight=1)
     frm_left.rowconfigure(2, weight=1)  # description expands
-    frm_left.rowconfigure(3, weight=1)  # output expands
+    frm_left.rowconfigure(3, weight=1)  # transcript expands
 
     # --- URL row ---
     frm_url = ttk.Frame(frm_left)
@@ -258,7 +317,7 @@ def main() -> None:
     frm_title.grid(column=0, row=1, sticky=("e", "w"), padx=6, pady=(0, 6))
 
     # Configure enough columns (you use up to column 7)
-    for c in range(8):
+    for c in range(11):
         frm_title.columnconfigure(c, weight=1)
 
     ttk.Label(frm_title, text="Video Id:").grid(column=0, row=0, sticky="w")
@@ -273,8 +332,11 @@ def main() -> None:
     ttk.Label(frm_title, text="Transcript Type:").grid(column=0, row=3, sticky="w")
     ttk.Label(frm_title, textvariable=ui.transcript_type).grid(column=1, row=3, sticky="w")
 
-    ttk.Label(frm_title, text="Video Type:").grid(column=2, row=3, sticky="w")
+    ttk.Label(frm_title, text="Video Type:").grid(column=1, row=3, sticky="w")
     ttk.Label(frm_title, textvariable=ui.video_type).grid(column=3, row=3, sticky="w")
+
+    ttk.Label(frm_title, text="Video format:").grid(column=2, row=3, sticky="w")
+    ttk.Label(frm_title, textvariable=ui.video_format).grid(column=3, row=3, sticky="w")
 
     ttk.Label(frm_title, text="Video Resolution:").grid(column=0, row=4, sticky="w")
     ttk.Label(frm_title, textvariable=ui.resolution).grid(column=1, row=4, sticky="w")
@@ -301,9 +363,9 @@ def main() -> None:
     txt_dscr.grid(column=0, row=0, sticky=("n", "s", "e", "w"))
     scrl_dscr.grid(column=1, row=0, sticky=("n", "s"))
 
-    set_text(txt_dscr, demo.description)
+    set_text(txt_dscr, init.description)
 
-    # --- Output text + scrollbar ---
+    # --- Transcript text + scrollbar ---
     out_frame = ttk.Frame(frm_left)
     out_frame.grid(column=0, row=3, sticky=("n", "s", "e", "w"), padx=6, pady=(0, 6))
     out_frame.columnconfigure(0, weight=1)
@@ -316,18 +378,30 @@ def main() -> None:
     txt_out.grid(column=0, row=0, sticky=("n", "s", "e", "w"))
     scrl_out.grid(column=1, row=0, sticky=("n", "s"))
 
-    set_text(txt_out, demo.transcript)
+    set_text(txt_out, init.transcript)
 
     # --- Right side controls ---
     frm_right.columnconfigure(0, weight=1)
 
-    ttk.Button(frm_right, text="History").grid(column=0, row=0, sticky=("e", "w"), padx=6, pady=(6, 2))
-    ttk.Label(frm_right, text="Output Format:").grid(column=0, row=1, sticky="w", padx=6, pady=(6, 2))
-    ttk.Radiobutton(frm_right, text="Json", variable=out_format, value="json").grid(column=0, row=2, sticky="w", padx=6)
-    ttk.Radiobutton(frm_right, text="Text", variable=out_format, value="transcript").grid(column=0, row=3, sticky="w", padx=6)
-    ttk.Radiobutton(frm_right, text="Sentences", variable=out_format, value="sentences").grid(column=0, row=4, sticky="w", padx=6)
-    ttk.Button(frm_right, text="Save").grid(column=0, row=6, sticky=("e", "w"), padx=6, pady=(10, 2))
-    ttk.Button(frm_right, text="Exit", command=root.destroy).grid(column=0, row=8, sticky=("s", "e", "w"), padx=6, pady=(10, 6))
+    ttk.Button(frm_right, text="History").grid(column=0, row=0,
+                                             sticky=("e", "w"), padx=6, pady=(6, 2))
+    ttk.Label(frm_right, text="Transcript type:").grid(column=0,
+                                                       row=1, sticky="w", padx=6, pady=(6, 2))
+    ttk.Radiobutton(frm_right, text="Json", variable=ui.transcript_type,
+                    value="json").grid(column=0, row=2, sticky="w", padx=6)
+    ttk.Radiobutton(frm_right, text="Text", variable=ui.transcript_type,
+                    value="transcript").grid(column=0, row=3, sticky="w", padx=6)
+    ttk.Radiobutton(frm_right, text="Sentences", variable=ui.transcript_type,
+                    value="sentences").grid(column=0, row=4, sticky="w", padx=6)
+    ttk.Label(frm_right, text="Output Format:").grid(column=0, row=6, sticky="w",
+                                                     padx=6, pady=(6, 2))
+    ttk.Radiobutton(frm_right, text="Markdown", variable=ui.out_format,
+                    value="markdown").grid(column=0, row=7, sticky="w", padx=6)
+    ttk.Radiobutton(frm_right, text="text", variable=ui.out_format,
+                    value="text").grid(column=0, row=8, sticky="w", padx=6)
+
+    ttk.Button(frm_exit, text="Exit", command=root.destroy).grid(column=0,
+                                        row=0, sticky=("s", "e", "w"), padx=6, pady=(10, 6))
 
     # -------------------------------------------------------------------------
     # Bindings (update on selection, Enter, or focus-out)
@@ -336,7 +410,6 @@ def main() -> None:
     def do_populate() -> None:
         populate(
             cmbo_url=cmbo_url,
-            out_format=out_format,
             cache=cache,
             ui=ui,
             txt_dscr=txt_dscr,
@@ -353,7 +426,8 @@ def main() -> None:
         if is_valid_youtube_url(cmbo_url.get()):
             do_populate()
 
-    out_format.trace_add("write", on_format_change)
+    ui.transcript_type.trace_add("write", on_format_change)
+    ui.out_format.trace_add("write", on_format_change)
 
     root.mainloop()
 
