@@ -3,20 +3,20 @@
     with a simple file-based cache.
 """
 from __future__ import annotations
-from dataclasses import asdict, dataclass, fields
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
-import json
-# import textwrap
-# import logging
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-# from typing import Any, Iterable
-# from yt_dlp import YoutubeDL
-from lib.utils.globals import APP_NAME, APP_PATHS
-from yt_lib.yt_ids import YtdlpMetadata, YoutubeIdKind, extract_video_id
-from yt_lib.ytdlp_info import YtdlpInfo, fetch_ytdlp_info_object, YtdlpFormat, read_YtdlpInfo, write_YtdlpInfo
-# from yt_lib.utils.paths import resolve_cache_paths
-from yt_lib.utils.log_utils import get_logger   # , log_tree
+from yt_lib.yt_ids import YoutubeIdKind, extract_video_id
+from yt_lib.ytdlp_info import (
+                                YtdlpInfo,
+                                fetch_YtdlpInfo_object,
+                                read_YtdlpInfo,
+                                write_YtdlpInfo
+                            )
+from yt_lib.utils.log_utils import get_logger
+from .app_context import RunContextStore
+
 
 logger = get_logger(__name__)
 
@@ -79,8 +79,9 @@ class InfoManager:
     """
 
     # def __init__(self, *, app_name: str = "transcripts", start: Path | None = None) -> None:
-    def __init__(self) -> None:
-        self.cache_dir: Path = APP_PATHS.user_cache_dir
+    def __init__(self,rt_ctx: RunContextStore) -> None:
+        self.ctx = rt_ctx
+        self.cache_dir: Path = self.ctx.cache_dir
         self.yt_source_list: list[tuple[float, YouTubeSource]] = []
         self.refresh_index()
 
@@ -207,10 +208,16 @@ class InfoManager:
         vid = info.get("id")
         url = info.get("webpage_url") if info.get("webpage_url") else info.get("original_url")
         if video_id := extract_video_id(url):
-            if vid != video_id: 
-                logger.warn("Extracted video_id %s from URL does not match info id %s. URL: %s", video_id, vid, url)
-                self.remove_from_cache(vid)  # Remove old cache entries for the mismatched ID to prevent confusion.
-                info["id"] = video_id  # Override with extracted ID to ensure consistency"]
+            if vid != video_id:
+                logger.warning(
+                       "Extracted video_id %s from URL does not match info id %s. URL: %s",
+                       video_id,
+                       vid,
+                       url
+                   )
+                self.remove_from_cache(vid)     # Remove old cache entries for the
+                                                # mismatched ID to prevent confusion.
+                info["id"] = video_id  # Override with extracted ID to ensure consistency"
                 vid = video_id
         else:
             raise ValueError(f"Could not extract video_id from {vid} or {info.url}")
@@ -309,8 +316,7 @@ class InfoManager:
                             logger.warning("Error reading metadata from %s: %s", info_file, e)
                             break  # fallback to fetching fresh metadata
             # If we didn’t find a valid cache entry, fetch fresh metadata.
-            return fetch_ytdlp_info_object(url)
+            return fetch_YtdlpInfo_object(url)
         except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error("Error fetching YtdlpInfo for %s: %s", url, e)
             raise
-

@@ -13,25 +13,42 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from venv import logger
-from tkinter import StringVar, IntVar, Text, Tk
-
+from pathlib import Path
+from tkinter import StringVar, IntVar, Text, Tk, Menu, filedialog, messagebox
 from tkinter import ttk
-
 from urllib.parse import urlparse
-
-from yt_lib.yt_ids import extract_video_id, YtdlpMetadata
-from yt_lib.yt_transcript import youtube_json, youtube_sentences, youtube_text
+from yt_lib.yt_ids import extract_video_id
+from yt_lib.ytdlp_info import YtdlpInfo
+from yt_lib.yt_transcript import youtube_json, youtube_text, youtube_sentences
 from yt_lib.utils.log_utils import configure_logging, LogConfig, FileLogConfig, get_logger
-from yt_lib.utils.paths import resolve_runtime_dirs, RuntimeDirs
-from lib.utils.globals import APP_NAME, APP_PATHS
-from lib.utils.info_cache import InfoManager
+from lib.app_context import create_runtime_context, RunContextStore
+from lib.info_cache import InfoManager
 
-file_log_conf = FileLogConfig(
-        log_dir=APP_PATHS.user_log_dir,
-        log_file_prefix=APP_NAME,
-    )
+
+APP_NAME = "yt_app"
+APP_AUTHOR = "HenCode"
+
+###############################################################################
+#
+# Context configuration to pass APP data/objects around without globals or tight
+# coupling.
+#
+################################################################################
+
+
+ctx = create_runtime_context(app_name = APP_NAME, app_author = APP_AUTHOR)
+ctx_store = RunContextStore(ctx=ctx)
+
+###############################################################################
+#
+# Logging setup: configure a logger for the app, with file output to an
+# OS-appropriate user log directory.
+#
+################################################################################
+
 log_cfg = LogConfig(root=APP_NAME)
+file_log_conf = FileLogConfig(path = ctx_store.log_dir)
+
 configure_logging(cfg=log_cfg,
                   file=file_log_conf,
                   force=True,
@@ -39,18 +56,18 @@ configure_logging(cfg=log_cfg,
                 )
 logger = get_logger(__name__)
 
-
-
 def format_hms(duration: int) -> str:
     """ Turn seconds into hours:minutes:seconds. """
     return time.strftime("%H:%M:%S", time.gmtime(duration))
-# -----------------------------------------------------------------------------
-# Demo fallback (remove once your cache always returns real metadata)
-# -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
 # Init default entries
 # -----------------------------------------------------------------------------
+
+
+
+
+
 
 @dataclass(slots=True)
 class InitInfo:
@@ -58,13 +75,13 @@ class InitInfo:
         A blank/default metadata object to use on app startup, or when the cache doesn't 
         have metadata for a url. The UI will just show blanks or defaults for all fields.
     """
-    video_id: str = " - "
-    title: str = " - "
-    url: str = " - "
+    video_id: str = ""
+    title: str = ""
+    url: str = ""
     # transcript_type: str = "json"
     # out_format:str = "markdown"
-    video_type: str = " - "
-    video_res: str = " - "
+    video_type: str = ""
+    video_res: str = ""
     fps: int = 0
     duration: int =  0
     video_size: int = 0
@@ -94,21 +111,21 @@ class UiVars:
 
     def clear(self) -> None:
         """ Set default values for the widgets. """
-        self.video_id.set(" - ")
-        self.title.set(" - ")
+        self.video_id.set("")
+        self.title.set("")
         self.url.set("")
         self.transcript_type.set("json")
         self.out_format.set("markdown")
-        self.video_type.set(" - ")
-        self.resolution.set(" - ")
-        self.video_format.set(" - ")
+        self.video_type.set("")
+        self.resolution.set("")
+        self.video_format.set("")
         self.fps.set(0)
-        self.duration.set(" - ")
+        self.duration.set("")
         self.file_size.set(0)
 
     def apply_metadata(
                         self,
-                        info: YtdlpMetadata,
+                        info: YtdlpInfo,
                         *,
                         transcript_type: str,
                         out_format: str,
@@ -127,7 +144,7 @@ class UiVars:
         # Optional / may be absent depending on your cache object
         self.video_type.set(str(getattr(info, "ext", "") or "").strip())
         self.video_format.set(str(getattr(info, "video_format", "") or "").strip())
-        self.resolution.set(str(getattr(info, "resolution", " - ") or " - "))
+        self.resolution.set(str(getattr(info, "resolution", "") or ""))
         fps = getattr(info, "fps", None)
         try:
             self.fps.set(int(fps) if fps is not None else 0)
@@ -143,14 +160,14 @@ class UiVars:
 def make_ui_vars(root: Tk) -> UiVars:
     """ Factory for the UiVars dataclass, so we can keep all Tk variable creation in one place. """
     return UiVars(
-        video_id=StringVar(root, " - "),
-        title=StringVar(root, " - "),
+        video_id=StringVar(root, ""),
+        title=StringVar(root, ""),
         url=StringVar(root, ""),
         transcript_type=StringVar(root, "json"),
         out_format=StringVar(root, "markdown"),
-        video_type=StringVar(root, " - "),
-        video_format=StringVar(root, " - "),
-        resolution=StringVar(root, " - "),
+        video_type=StringVar(root, ""),
+        video_format=StringVar(root, ""),
+        resolution=StringVar(root, ""),
         fps=IntVar(root, 0),
         duration=StringVar(root, "0"),
         file_size=IntVar(root, 0),
@@ -211,7 +228,7 @@ def populate(
     # If the url is valid, we should have metadata for it in the cache.
     # If not, the cache can return a blank/default metadata object (never None)
     # and the UI will just show blanks/defaults.
-    info = cache.get_video_metadata(url)
+    info = cache.get_YtdlpInfo(url)
     ui.apply_metadata(
                         info,
                         transcript_type=ui.transcript_type.get(),
@@ -252,12 +269,15 @@ def populate(
 def main() -> None:
     """ Set up the GUI, load initial data, and bind events. """
 
-    cache = InfoManager()
+    cache = InfoManager(ctx_store)
 
     root = Tk()
     root.title("yt_app")
     root.geometry("1100x700")  # prevents giant off-screen windows
     root.minsize(900, 500)
+
+
+
 
     # Single place for widget-bound vars
     ui = make_ui_vars(root)
@@ -274,6 +294,72 @@ def main() -> None:
 
     content = ttk.Frame(root, padding=(6, 6, 12, 12))
     content.grid(column=0, row=0, sticky=("n", "s", "e", "w"))
+
+
+# -----------------------------------------------------------------------------
+# Menu commands
+# -----------------------------------------------------------------------------
+
+
+
+    # Prevent tear off menues (annoying default in Tkinter)
+    root.option_add("*tearOff", False)
+
+    win = content.winfo_toplevel()
+    menubar = Menu(win)
+    win['menu'] = menubar
+    # sysmenu = Menu(menubar, name='system')
+    # menubar.add_cascade(menu=sysmenu)
+
+    menu_file = Menu(menubar)
+    menu_edit = Menu(menubar)
+    menubar.add_cascade(menu=menu_file, label='File')
+    menubar.add_cascade(menu=menu_edit, label='Edit')
+
+    def save_as() -> None:
+        filename = filedialog.asksaveasfilename(
+            title="Save As",
+            defaultextension=".md",
+            filetypes=[
+                ("Markdown files", "*.md"),
+                ("Text files", "*.txt"),
+                ("All files", "*.*"),
+            ],
+            initialfile= f"{ui.video_id.get()}.md",
+        )
+
+        if not filename:
+            return
+
+        path = Path(filename)
+        # current_save_path = path
+
+        try:
+            text_content = txt_out.get("1.0", "end-1c")
+            path.write_text(text_content, encoding="utf-8")
+        except OSError as exc:
+            messagebox.showerror("Save failed", f"Could not save file {path}:\n{exc}")
+            return
+
+
+    
+    menu_file.add_command(label='Save...', command=save_as)
+    menu_file.add_separator()
+    menu_file.add_command(label='Exit', command=root.destroy)
+
+    menu_edit.add_command(label='Clear', command=ui.clear)
+
+
+
+
+
+
+
+
+
+
+
+
 
     # Make the root/content expandable
     root.columnconfigure(0, weight=1)
