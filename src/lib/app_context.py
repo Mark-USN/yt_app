@@ -63,32 +63,48 @@ class RunContextStore:
     @property
     def cache_dir(self) -> Path:
         """Return the cache directory."""
-        return self.ctx.cache_dir
+        path = self.ctx.cache_dir
+        path.mkdir(parents=True, exist_ok=True)
+        return path
 
     @property
     def config_dir(self) -> Path:
         """Return the config directory."""
-        return self.ctx.config_dir
+        path = self.ctx.config_dir
+        path.mkdir(parents=True, exist_ok=True)
+        return path
 
     @property
     def data_dir(self) -> Path:
         """Return the data directory."""
-        return self.ctx.data_dir
+        path = self.ctx.data_dir
+        path.mkdir(parents=True, exist_ok=True)
+        return path
 
     @property
     def state_dir(self) -> Path:
         """Return the state directory."""
-        return self.ctx.state_dir
+        path = self.ctx.state_dir
+        path.mkdir(parents=True, exist_ok=True)
+        return path
 
     @property
     def log_dir(self) -> Path:
         """Return the log directory."""
-        return self.ctx.log_dir
+        path = self.ctx.log_dir
+        path.mkdir(parents=True, exist_ok=True)
+        return path
 
     @property
     def documents_dir(self) -> Path:
         """Return the documents directory."""
-        return self.ctx.documents_dir
+        path = self.ctx.documents_dir
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    def documents_path(self, file_path: str) -> Path:
+        """Return the transcript file path for a given video ID."""
+        return self.documents_dir / file_path
 
     def transcript_dir(self) -> Path:
         """Return the transcript directory, creating it if necessary."""

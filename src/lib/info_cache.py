@@ -11,6 +11,7 @@ from yt_lib.yt_ids import YoutubeIdKind, extract_video_id
 from yt_lib.ytdlp_info import (
                                 YtdlpInfo,
                                 fetch_YtdlpInfo_object,
+                                write_info,
                                 read_YtdlpInfo,
                                 write_YtdlpInfo
                             )
@@ -79,9 +80,9 @@ class InfoManager:
     """
 
     # def __init__(self, *, app_name: str = "transcripts", start: Path | None = None) -> None:
-    def __init__(self,rt_ctx: RunContextStore) -> None:
-        self.ctx = rt_ctx
-        self.cache_dir: Path = self.ctx.cache_dir
+    def __init__(self,rt_ctx_store: RunContextStore) -> None:
+        self.ctx_store = rt_ctx_store
+        self.cache_dir: Path = self.ctx_store.cache_dir
         self.yt_source_list: list[tuple[float, YouTubeSource]] = []
         self.refresh_index()
 
@@ -205,33 +206,17 @@ class InfoManager:
           - writes <video_id>.info (JSON VideoMetadata)
           - prepends the new entry to the in-memory index
         """
-        vid = info.get("id")
-        url = info.get("webpage_url") if info.get("webpage_url") else info.get("original_url")
-        if video_id := extract_video_id(url):
-            if vid != video_id:
-                logger.warning(
-                       "Extracted video_id %s from URL does not match info id %s. URL: %s",
-                       video_id,
-                       vid,
-                       url
-                   )
-                self.remove_from_cache(vid)     # Remove old cache entries for the
-                                                # mismatched ID to prevent confusion.
-                info["id"] = video_id  # Override with extracted ID to ensure consistency"
-                vid = video_id
-        else:
-            raise ValueError(f"Could not extract video_id from {vid} or {info.url}")
-
         # 20260206 MMH Don't want to clobber json file if it already exists.
         # If the video_id is the same but the URL is different, that’s a bit
         # weird but we can just update the metadata and keep the same .info file.
 
         # If your VideoMetadata.video_id should drive the filename, you can enforce it here:
-        info_file = self.info_path_for(vid)
+        info_file = self.info_path_for(info.id)
 
        # Remove stale artifacts (including old .url caches) before writing.
-        self.remove_stale_files_for_video_id(video_id, keep=info_file)
-        write_YtdlpInfo(info_file, info)
+        self.remove_stale_files_for_video_id(info.id, keep=info_file)
+        # write_YtdlpInfo(info_file, info)
+        write_info(info_file, info.raw)
         logger.info("Cached Ytdlp_info to %s.", info_file)
 
         yt_source = YouTubeSource.from_YtdlpInfo(info=asdict(info))
@@ -267,6 +252,37 @@ class InfoManager:
     # cached URL list retrieval
     # ----------------------------
 
+
+    def get_YtdlpInfo(self, url: str) -> YtdlpInfo:
+        """ Get YtdlpInfo for a URL, checking the cache for the url 
+            and if found update the cache list.  If it is not in the cache 
+            get it from yt-dlp and put it in the top of the list.
+        """
+        vid = extract_video_id(url)
+        if not vid:
+            raise ValueError(f"URL does not contain a Video Id. URL:  {url}")
+        try:
+            for _, yt_src in self.yt_source_list:
+                if yt_src.id == vid:
+                    info_file = self.info_path_for(yt_src.id)
+                    if info_file.is_file():
+                        try:
+                            info_file.touch()  # update mtime to reflect recent access
+                            self.refresh_index()  # re-sort index after mtime update
+                            return read_YtdlpInfo(info_file)
+                        except Exception as e:  # pylint: disable=broad-exception-caught
+                            logger.warning("Error reading metadata from %s: %s", info_file, e)
+                            break  # fallback to fetching fresh metadata
+            # If we didn’t find a valid cache entry, fetch fresh metadata.
+            new_info: YtdlpInfo = fetch_YtdlpInfo_object(url)
+            self.cache_YtdlpInfo(new_info)
+            return new_info
+
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.error("Error fetching YtdlpInfo for %s: %s", url, e)
+            raise
+
+
     def get_cached_urls(self) -> list[str]:
         """Return a list of URLs from the current cache entries, newest first."""
         urls = []
@@ -294,29 +310,3 @@ class InfoManager:
                 continue
         return choices
 
-
-    def get_YtdlpInfo(self, url: str) -> YtdlpInfo:
-        """ Get YtdlpInfo for a URL, checking the cache for the url 
-            and if found update the cache list.  If it is not in the cache 
-            get it from yt-dlp and put it in the top of the list.
-        """
-        vid = extract_video_id(url)
-        if not vid:
-            raise ValueError(f"URL does not contain a Video Id. URL:  {url}")
-        try:
-            for _, yt_src in self.yt_source_list:
-                if yt_src.id == vid:
-                    info_file = self.info_path_for(yt_src.id)
-                    if info_file.is_file():
-                        try:
-                            info_file.touch()  # update mtime to reflect recent access
-                            self.refresh_index()  # re-sort index after mtime update
-                            return read_YtdlpInfo(info_file)
-                        except Exception as e:  # pylint: disable=broad-exception-caught
-                            logger.warning("Error reading metadata from %s: %s", info_file, e)
-                            break  # fallback to fetching fresh metadata
-            # If we didn’t find a valid cache entry, fetch fresh metadata.
-            return fetch_YtdlpInfo_object(url)
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            logger.error("Error fetching YtdlpInfo for %s: %s", url, e)
-            raise
