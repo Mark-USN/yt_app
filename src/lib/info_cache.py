@@ -304,7 +304,7 @@ class InfoManager:
             try:
                 # List entries as Video ID: Title
                 key = yt_source.id + ": " + yt_source.title
-                choices.append({key,yt_source.url})
+                choices.append({'title':key, 'url':yt_source.url})
             except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.warning("Error reading URL or Title from %s: %s", yt_source, e)
                 continue

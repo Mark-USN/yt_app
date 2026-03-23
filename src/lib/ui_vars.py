@@ -4,21 +4,16 @@
 
 from __future__ import annotations
 
-# from functools import cache
 import time
-# import json
-# from dataclasses import dataclass
-# from pathlib import Path
 from urllib.parse import urlparse
-# from functools import partial
 from tkinter import Tk, StringVar, IntVar, DoubleVar, Text # , Toplevel, filedialog, messagebox
-# from tkinter import ttk
 from yt_lib.yt_ids import extract_video_id
 from yt_lib.yt_transcript import youtube_json # , youtube_text, youtube_sentences
 from yt_lib.ytdlp_info import YtdlpInfo
 from yt_lib.utils.log_utils import get_logger
 from lib.app_context import RunContextStore
 from lib.info_cache import InfoManager
+from lib.history_dialog import HistoryDialog
 from lib.format_transcript import json_to_sentences, json_to_text, convert_json
 
 
@@ -57,7 +52,7 @@ class UiVars:
     url: StringVar
     transcript_type: StringVar
     out_format: StringVar
-    video_type: StringVar
+    ext: StringVar
     video_format: StringVar
     resolution: StringVar
     fps: DoubleVar
@@ -88,7 +83,7 @@ class UiVars:
         self.url = StringVar(self.win, "")
         self.transcript_type = StringVar(self.win, "json")
         self.out_format = StringVar(self.win, "markdown")
-        self.video_type = StringVar(self.win, "")
+        self.ext = StringVar(self.win, "")
         self.video_format = StringVar(self.win, "")
         self.resolution = StringVar(self.win, "")
         self.fps = DoubleVar(self.win, 0.0)
@@ -127,7 +122,7 @@ class UiVars:
         self.url.set("")
         self.transcript_type.set("json")
         self.out_format.set("markdown")
-        self.video_type.set("")
+        self.ext.set("")
         self.resolution.set("")
         self.video_format.set("")
         self.fps.set(0.0)
@@ -166,7 +161,7 @@ class UiVars:
         self.url.set(str(info.webpage_url).strip())
 
         # Optional / may be absent depending on your cache object
-        self.video_type.set(str(info.selection_summary.overall_format).strip())
+        self.ext.set(str(info.ext).strip())
         self.video_format.set(str(info.format_name or "").strip())
         self.resolution.set(str(getattr(info, "resolution", "") or ""))
 

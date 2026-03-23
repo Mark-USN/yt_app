@@ -59,10 +59,10 @@ class MenuCommands:
             self.ui.clear()
 
     def save_as(self) -> None:
-        ext = "md" if self.ui.out_format.get().strip() == "markdown" else "txt"
+        ext = "md" # if self.ui.out_format.get().strip() == "markdown" else "txt"
 
         video_id = self.ui.video_id.get().strip()
-        default_filename = f"{video_id}.{ext}" if video_id else f"transcript.{ext}"
+        default_filename = f"{video_id}.{ext}" # if video_id else f"transcript.{ext}"
 
         filename = filedialog.asksaveasfilename(
             title="Save As",
@@ -95,8 +95,8 @@ class MenuCommands:
          ]
         if self.ui.url:
             front_matter.append(f"url: {self.ui.url}")
-        if self.ui.output_type:
-            front_matter.append(f"output_type: {self.ui.output_type}")
+        # if self.ui.output_type:
+        #     front_matter.append(f"output_type: {self.ui.output_type}")
 
         front_matter.append("---\n")
         return front_matter
@@ -109,10 +109,10 @@ class MenuCommands:
         body = (
             "\n".join(front_matter)
             + "## Description\n\n"
-            + (self.ui.description.get("1.0", "end-1c").strip() + "\n\n" if
-               self.ui.description.get("1.0", "end-1c").strip() else "\n")
+            + (self.ui.desc_txt.strip() + "\n\n" if
+               self.ui.desc_txt.strip() else "\n")
             + "## Transcript / Output\n\n"
-            + self.ui.displayed_text.rstrip()
+            + self.ui.transcript_txt.rstrip()
             + "\n"
         )
         filepath.write_text(body, encoding="utf-8")
