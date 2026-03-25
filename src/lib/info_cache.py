@@ -309,4 +309,3 @@ class InfoManager:
                 logger.warning("Error reading URL or Title from %s: %s", yt_source, e)
                 continue
         return choices
-

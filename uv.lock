@@ -1257,7 +1257,7 @@ requires-dist = [
     { name = "pylint", specifier = ">=4.0.4" },
     { name = "youtube-transcript-api", specifier = ">=1.2.4" },
     { name = "yt-dlp", specifier = ">=2026.2.4" },
-    { name = "yt-lib", directory = "../yt_lib" },
+    { name = "yt-lib", git = "https://github.com/Mark-USN/yt_lib.git?rev=main" },
 ]
 
 [[package]]
@@ -1272,28 +1272,11 @@ wheels = [
 [[package]]
 name = "yt-lib"
 version = "0.2.3"
-source = { directory = "../yt_lib" }
+source = { git = "https://github.com/Mark-USN/yt_lib.git?rev=main#8ec964b90a2825b642a442d82ad19be653cbd6f4" }
 dependencies = [
     { name = "google-api-python-client" },
     { name = "openai-whisper" },
     { name = "pydantic" },
     { name = "youtube-transcript-api" },
     { name = "yt-dlp" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "google-api-python-client", specifier = ">=2.190.0" },
-    { name = "openai-whisper" },
-    { name = "pydantic", specifier = ">=2.12.5" },
-    { name = "youtube-transcript-api", specifier = ">=1.2.4" },
-    { name = "yt-dlp", specifier = ">=2026.2.4" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "build", specifier = ">=1.4.0" },
-    { name = "pyright", specifier = ">=1.1.408" },
-    { name = "pytest", specifier = ">=9.0.2" },
-    { name = "ruff", specifier = ">=0.15.1" },
 ]

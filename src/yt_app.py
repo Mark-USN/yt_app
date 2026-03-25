@@ -17,7 +17,7 @@ from tkinter import Tk, Text # , StringVar, IntVar, DoubleVar, Menu, filedialog,
 from tkinter import ttk
 # from yt_lib.ytdlp_info import YtdlpInfo
 from yt_lib.utils.log_utils import configure_logging, LogConfig, FileLogConfig, get_logger
-from lib import menus
+# from lib import menus
 from lib.app_context import create_runtime_context, RunContextStore
 from lib.info_cache import InfoManager
 from lib.ui_vars import UiVars, is_valid_youtube_url
@@ -69,8 +69,10 @@ def main() -> None:
     root.minsize(900, 500)
 
     ui_vars = UiVars(root=root, ctx=ctx_store, cache=cache)
-    menus = MenuCommands(root=root, ctx=ctx_store, ui=ui_vars)  
+    # menu = MenuCommands(root=root, ctx=ctx_store, ui=ui_vars)
+    MenuCommands(root=root, ctx=ctx_store, ui=ui_vars)
 
+    # frame['padding'] = (left, top, right, bottom)
     main_frame = ttk.Frame(root, padding=(6, 6, 12, 12))
     main_frame.grid(column=0, row=0, sticky="nsew")
 
@@ -84,18 +86,14 @@ def main() -> None:
     # -------------------------------------------------------------------------
     # Top section: left = URL + info, right = controls
     # -------------------------------------------------------------------------
-    top_frame = ttk.Frame(main_frame)
+    top_frame = ttk.Frame(main_frame, padding=(6, 6, 12, 12), borderwidth=1, relief="ridge")
     top_frame.grid(column=0, row=0, sticky="ew")
 
     top_frame.columnconfigure(0, weight=1)  # left side expands
     top_frame.columnconfigure(1, weight=0)  # right side stays natural size
 
-    left_top_frame = ttk.Frame(top_frame)
-    left_top_frame.grid(column=0, row=0, sticky="ew", padx=(0, 8))
-    left_top_frame.columnconfigure(0, weight=1)
-
     # --- URL row ---
-    url_frame = ttk.Frame(left_top_frame, borderwidth=1, relief="ridge")
+    url_frame = ttk.Frame(top_frame, padding=(6, 6, 12, 12), borderwidth=1)
     url_frame.grid(column=0, row=0, sticky="ew", padx=6, pady=6)
     url_frame.columnconfigure(1, weight=1)
 
@@ -108,45 +106,59 @@ def main() -> None:
     cmbo_url["values"] = choices
 
     # --- Info frame ---
-    info_frame = ttk.Frame(left_top_frame, borderwidth=1, relief="ridge")
-    info_frame.grid(column=0, row=1, sticky="ew", padx=6, pady=(0, 6))
+    info_frame = ttk.Frame(top_frame, padding=(6, 6, 12, 12), borderwidth=1, relief="ridge")
+    info_frame.grid(column=0, row=1, sticky="nsew", padx=6, pady=(0, 6))
 
-    for c in range(6):
+    for c in range(10):
         info_frame.columnconfigure(c, weight=1)
 
-    ttk.Label(info_frame, text="Video Id:").grid(column=0, row=0, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.video_id).grid(column=1, row=0, columnspan=5, sticky="w")
 
-    ttk.Label(info_frame, text="Title:").grid(column=0, row=1, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.title).grid(column=1, row=1, columnspan=5, sticky="w")
+    ttk.Label(info_frame, text="Title: ").grid(column=0, row=0, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.title).grid(column=1,
+                    row=0, columnspan=9, sticky="w")
 
-    ttk.Label(info_frame, text="URL:").grid(column=0, row=2, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.url).grid(column=1, row=2, columnspan=5, sticky="w")
+    ttk.Label(info_frame, text="URL: ").grid(column=0, row=1, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.url).grid(column=1,
+                    row=1, columnspan=9, sticky="w")
 
-    ttk.Label(info_frame, text="Transcript Type:").grid(column=0, row=3, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.transcript_type).grid(column=1, row=3, sticky="w")
+    ttk.Label(info_frame, text="Video Format: ").grid(column=0, row=2, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.video_format).grid(column=1,
+                    row=2, columnspan=9, sticky="w")
 
-    ttk.Label(info_frame, text="Extension:").grid(column=2, row=3, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.ext).grid(column=3, row=3, sticky="w")
+    ttk.Label(info_frame, text="Video Id: ").grid(column=0, row=3, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.video_id).grid(column=1, row=3, sticky="w")
 
-    ttk.Label(info_frame, text="Video Format:").grid(column=4, row=3, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.video_format).grid(column=5, row=3, sticky="w")
+    ttk.Label(info_frame, text="Transcript Type:").grid(column=2, row=3, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.transcript_type).grid(column=3, row=3, sticky="w")
 
-    ttk.Label(info_frame, text="Video Resolution:").grid(column=0, row=4, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.resolution).grid(column=1, row=4, sticky="w")
+    ttk.Label(info_frame, text="Extension:").grid(column=4, row=3, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.ext).grid(column=5, row=3, sticky="w")
 
-    ttk.Label(info_frame, text="fps:").grid(column=2, row=4, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.fps).grid(column=3, row=4, sticky="w")
+    ttk.Label(info_frame, text="Video Resolution:").grid(column=6, row=3, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.resolution).grid(column=7, row=3, sticky="w")
 
-    ttk.Label(info_frame, text="Duration:").grid(column=4, row=4, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.duration).grid(column=5, row=4, sticky="w")
+    ttk.Label(info_frame, text="File Size:").grid(column=0, row=4, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.file_size).grid(column=1, row=4, sticky="w")
 
-    ttk.Label(info_frame, text="File Size:").grid(column=0, row=5, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.file_size).grid(column=1, row=5, sticky="w")
+    ttk.Label(info_frame, text="Duration:").grid(column=2, row=4, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.duration).grid(column=3, row=4, sticky="w")
+
+    ttk.Label(info_frame, text="fps:").grid(column=4, row=4, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.fps).grid(column=5, row=4, sticky="w")
+
+    ttk.Label(info_frame, text="Bit Rate:").grid(column=6, row=4, sticky="e")
+    ttk.Label(info_frame, textvariable=ui_vars.bit_rate).grid(column=7, row=4, sticky="e")
+    ttk.Label(info_frame, text="kbs").grid(column=8, row=4, sticky="w")
 
     # --- Options frame on the right of URL + info ---
-    option_frame = ttk.Frame(top_frame, borderwidth=1, relief="ridge")
-    option_frame.grid(column=1, row=0, sticky="ns")
+    option_frame = ttk.Frame(top_frame, padding=(6, 6, 12, 12), borderwidth=1, relief="ridge")
+    # pady(0, 6) aligns the bottom of this frame with the bottom of the info frame, and the top
+    # with the top of the URL frame
+    option_frame.grid(column=1, row=0, rowspan=2, sticky="ns", padx=6, pady=(0, 6))
+
+
+
+
 
     def open_history() -> None:
         prompts: list[dict[str,str]] = cache.get_cached_prompts()
@@ -161,34 +173,35 @@ def main() -> None:
                 ui_vars.ui_change()
 
 
-    ttk.Button(option_frame, text="History", command=open_history).grid(column=0, row=0, sticky="ew", padx=6, pady=(6, 2))
-    
+    ttk.Button(option_frame, text="History", command=open_history).grid(column=0,
+                    row=0, sticky="ew", padx=6, pady=(6, 2))
 
-    ttk.Label(option_frame, text="Transcript type:").grid(column=0, row=1, sticky="w", padx=6, pady=(6, 2))
+    ttk.Label(option_frame, text="Transcript type:").grid(column=0,
+                    row=1, sticky="w", padx=6, pady=(6, 2))
     ttk.Radiobutton(
         option_frame,
         text="Json",
         variable=ui_vars.transcript_type,
-        value="json",
+        value="Json",
     ).grid(column=0, row=2, sticky="w", padx=6)
     ttk.Radiobutton(
         option_frame,
         text="Text",
         variable=ui_vars.transcript_type,
-        value="transcript",
+        value="Text",
     ).grid(column=0, row=3, sticky="w", padx=6)
     ttk.Radiobutton(
         option_frame,
         text="Sentences",
         variable=ui_vars.transcript_type,
-        value="sentences",
+        value="Sentences",
     ).grid(column=0, row=4, sticky="w", padx=6)
 
 
     # -------------------------------------------------------------------------
     # Description
     # -------------------------------------------------------------------------
-    desc_frame = ttk.LabelFrame(main_frame, text="Description")
+    desc_frame = ttk.LabelFrame(main_frame, padding=(6, 6, 12, 12), text="Description")
     desc_frame.grid(column=0, row=1, sticky="nsew", padx=6, pady=(0, 6))
     desc_frame.columnconfigure(0, weight=1)
     desc_frame.rowconfigure(0, weight=1)
@@ -204,7 +217,7 @@ def main() -> None:
     # -------------------------------------------------------------------------
     # Transcript
     # -------------------------------------------------------------------------
-    out_frame = ttk.LabelFrame(main_frame, text="Transcript")
+    out_frame = ttk.LabelFrame(main_frame, padding=(6, 6, 12, 12), text="Transcript")
     out_frame.grid(column=0, row=2, sticky="nsew", padx=6, pady=(0, 6))
     out_frame.columnconfigure(0, weight=1)
     out_frame.rowconfigure(0, weight=1)
@@ -232,7 +245,7 @@ def main() -> None:
             do_populate()
 
     ui_vars.transcript_type.trace_add("write", on_format_change)
-    ui_vars.out_format.trace_add("write", on_format_change)
+    # ui_vars.out_format.trace_add("write", on_format_change)
 
     root.mainloop()
 

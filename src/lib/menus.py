@@ -90,14 +90,18 @@ class MenuCommands:
     def create_front_matter(self) -> list[str]:
         front_matter: list[str] = [
                 "---",
-                f"video_id: {self.ui.video_id.get().strip()}",
                 f"title: {self.ui.title.get().strip()}",
+                f"url: {self.ui.url.get().strip()}",
+                f"video_format: {self.ui.video_format.get().strip()}",
+                f"video_id: {self.ui.video_id.get().strip()}" \
+                f"  transcript_type: {self.ui.transcript_type.get().strip()}" \
+                f"  extension: {self.ui.ext.get().strip()}" \
+                f"  video_resolution: {self.ui.resolution.get().strip()}",
+                f"file_size: {self.ui.file_size.get()}" \
+                f"  duration: {self.ui.duration.get().strip()}" \
+                f"  fps: {self.ui.fps.get()}" \
+                f"  bit_rate: {self.ui.bit_rate.get()} kbps"
          ]
-        if self.ui.url:
-            front_matter.append(f"url: {self.ui.url}")
-        # if self.ui.output_type:
-        #     front_matter.append(f"output_type: {self.ui.output_type}")
-
         front_matter.append("---\n")
         return front_matter
 

@@ -74,5 +74,3 @@ def convert_json(transcript_list: Sequence["TranscriptSnippet"])->str:
         snippets.append(f"{{text: {entry['text']}, start={entry['start']}"
                         f", duration={entry['duration']}}},")
     return "\n".join(snippets)
-
-

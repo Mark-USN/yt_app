@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from typing import TypedDict
-from tkinter import Tk, Toplevel, Listbox, Event, Misc, END 
+from tkinter import font
+from tkinter import Tk, Toplevel, Listbox, Event, Misc, END
 from tkinter import ttk
 from yt_lib.utils.log_utils import get_logger
 # from lib.info_cache import InfoManager
@@ -57,7 +58,22 @@ class HistoryDialog(Toplevel):
         list_frame.columnconfigure(0, weight=1)
         list_frame.rowconfigure(0, weight=1)
 
-        self.listbox = Listbox(list_frame, activestyle="dotbox")
+        titles:list[str] = [item['title'] for item in self.items]
+
+        max_len = max((len(t) for t in titles), default=20)
+
+        self.listbox = Listbox(
+            list_frame,
+            activestyle="dotbox",
+            width=min(max_len + 2, 120),
+        )
+        # Pixel-perfect sizing
+        f = font.nametofont(self.listbox.cget("font"))
+
+        if titles:
+            pixel_width = max((f.measure(t) for t in titles), default=200)
+            self.geometry(f"{pixel_width + 60}x400")
+
         self.listbox.grid(row=0, column=0, sticky="nsew")
 
         scrollbar = ttk.Scrollbar(
@@ -67,11 +83,9 @@ class HistoryDialog(Toplevel):
         )
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.listbox.configure(yscrollcommand=scrollbar.set)
-        titles:list[str] = [item['title'] for item in self.items]
 
-
-        for title in titles:
-            self.listbox.insert(END, title)
+        for ttl in titles:
+            self.listbox.insert(END, ttl)
 
         if self.items:
             self.listbox.selection_set(0)

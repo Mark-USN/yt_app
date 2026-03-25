@@ -13,7 +13,7 @@ from yt_lib.ytdlp_info import YtdlpInfo
 from yt_lib.utils.log_utils import get_logger
 from lib.app_context import RunContextStore
 from lib.info_cache import InfoManager
-from lib.history_dialog import HistoryDialog
+# from lib.history_dialog import HistoryDialog
 from lib.format_transcript import json_to_sentences, json_to_text, convert_json
 
 
@@ -51,13 +51,14 @@ class UiVars:
     title: StringVar
     url: StringVar
     transcript_type: StringVar
-    out_format: StringVar
+    # out_format: StringVar
     ext: StringVar
     video_format: StringVar
     resolution: StringVar
     fps: DoubleVar
     duration: StringVar
     file_size: IntVar
+    bit_rate: DoubleVar
     transcript_json: str
     desc_txt: str
     transcript_txt: str
@@ -81,14 +82,15 @@ class UiVars:
         self.video_id = StringVar(self.win, "")
         self.title = StringVar(self.win, "")
         self.url = StringVar(self.win, "")
-        self.transcript_type = StringVar(self.win, "json")
-        self.out_format = StringVar(self.win, "markdown")
+        self.transcript_type = StringVar(self.win, "Json")
+        # self.out_format = StringVar(self.win, "markdown")
         self.ext = StringVar(self.win, "")
         self.video_format = StringVar(self.win, "")
         self.resolution = StringVar(self.win, "")
         self.fps = DoubleVar(self.win, 0.0)
-        self.duration = StringVar(self.win, "0")
+        self.duration = StringVar(self.win, "00:00:00 ")
         self.file_size = IntVar(self.win, 0)
+        self.bit_rate = DoubleVar(self.win, 0.0)
         self.transcript_json = ""
         self.desc_txt = """- Description -"""
         self.transcript_txt = """- Transcript -"""
@@ -99,14 +101,18 @@ class UiVars:
 
 
     def set_desc_widget(self, widget: Text) -> None:
-        """ Store a reference to the description Text widget, so we can update it when metadata changes. """
+        """ Store a reference to the description Text widget, so we can 
+            update it when metadata changes.
+        """
         self.desc_widget = widget
         self.set_text(self.desc_widget, self.desc_txt)
 
 
 
     def set_transcript_widget(self, widget: Text) -> None:
-        """ Store a reference to the transcript Text widget, so we can update it when metadata changes """
+        """ Store a reference to the transcript Text widget, so we can 
+            update it when metadata changes
+        """
         self.transcript_widget = widget
         self.set_text(self.transcript_widget, self.transcript_txt)
 
@@ -120,14 +126,15 @@ class UiVars:
         self.video_id.set("")
         self.title.set("")
         self.url.set("")
-        self.transcript_type.set("json")
-        self.out_format.set("markdown")
+        self.transcript_type.set("Json")
+        # self.out_format.set("markdown")
         self.ext.set("")
         self.resolution.set("")
         self.video_format.set("")
         self.fps.set(0.0)
-        self.duration.set("")
+        self.duration.set("00:00:00")
         self.file_size.set(0)
+        self.bit_rate.set(0.0)
         self.transcript_json = ""
         self.desc_txt = """- Description -"""
         if self.desc_widget is not None:
@@ -163,7 +170,7 @@ class UiVars:
         # Optional / may be absent depending on your cache object
         self.ext.set(str(info.ext).strip())
         self.video_format.set(str(info.format_name or "").strip())
-        self.resolution.set(str(getattr(info, "resolution", "") or ""))
+        self.resolution.set(str(info.best_format.computed_resolution) or "")
 
         fps = info.best_format.fps
         try:
@@ -175,6 +182,8 @@ class UiVars:
         self.duration.set(format_hms(info.selection_summary.duration_s))
 
         self.file_size.set(info.best_format.best_filesize)
+        self.bit_rate.set(info.best_format.tbr_kbps)
+
         self.desc_txt = info.description.strip() if info.description else "- Description -"
         if self.desc_widget is not None:
             self.set_text(self.desc_widget, self.desc_txt)
@@ -182,17 +191,17 @@ class UiVars:
             self.previous_url = combo_url
             self.transcript_json = youtube_json(combo_url)
         # ---- transcript output ----
-        match self.transcript_type.get().strip():
+        match str(self.transcript_type.get()).lower().strip():
             case "json":
                 self.transcript_txt = convert_json(self.transcript_json)
-            case "transcript":
+            case "text":
                 self.transcript_txt = json_to_text(self.transcript_json)
             case "sentences":
                 self.transcript_txt = json_to_sentences(self.transcript_json)
             case _:
                 self.transcript_txt = f"Unknown format: {self.transcript_type.get()}"
 
-        if self.transcript_widget != None:
+        if self.transcript_widget is not None:
             if not self.transcript_txt.strip():
                 self.transcript_txt = "- Transcript -"
             self.set_text(self.transcript_widget, self.transcript_txt)
@@ -212,9 +221,3 @@ class UiVars:
         widget.insert("1.0", value)
         widget.see("1.0")
         widget.configure(state="disabled")
-
-
-
-
-
-
