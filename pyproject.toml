@@ -9,6 +9,9 @@ dependencies = [
     "yt-lib",
     "youtube-transcript-api>=1.2.4",
     "yt-dlp>=2026.2.4",
+    "babel>=2.18.0",
+    "reportlab>=4.4.10",
+    "pywin32>=311",
 ]
 
 [tool.uv.sources]

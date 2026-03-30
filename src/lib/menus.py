@@ -5,14 +5,12 @@
 
 from __future__ import annotations
 
-# from dataclasses import dataclass
 from pathlib import Path
-# from functools import partial
 from tkinter import Tk, Menu, filedialog, messagebox    # , Toplevel, StringVar, IntVar, Text
-# from tkinter import ttk
 from yt_lib.utils.log_utils import get_logger
 from lib.app_context import RunContextStore
 from lib.ui_vars import UiVars
+from lib.save import FileSaver
 
 logger = get_logger(__name__)
 
@@ -22,16 +20,26 @@ logger = get_logger(__name__)
 
 
 class MenuCommands:
+    """ Menu commands for the youtube transcript app. 
+        Holds references to the objects needed to create the menu system
+        and perform the menu actions.
+    """
     def __init__(
         self,
         root: Tk,
         ctx: RunContextStore,
         ui: UiVars,
-        # txt_out: Text,
     ) -> None:
+        """ Initialize the MenuCommands object.
+            Args:
+                root: The root Tkinter window.
+                ctx: The RunContextStore object that holds the application's paths.
+                ui: The UiVars object that holds the application's UI variables.
+        """
         self.win = root
         self.ctx = ctx
         self.ui = ui
+        self.saver = FileSaver(self.ctx,self.ui)
         # self.txt_out = txt_out
 
         self.win.option_add("*tearOff", False)
@@ -52,6 +60,7 @@ class MenuCommands:
         self.menu_edit.add_command(label="Clear", command=self.clear)
 
     def clear(self) -> None:
+        """ Clear the transcript fields if the user confirms. """
         if messagebox.askyesno(
             "Clear Transcript",
             "Are you sure you want to clear the transcript?",
@@ -59,6 +68,7 @@ class MenuCommands:
             self.ui.clear()
 
     def save_as(self) -> None:
+        """ Save the transcript to a file. """
         ext = "md" # if self.ui.out_format.get().strip() == "markdown" else "txt"
 
         video_id = self.ui.video_id.get().strip()
@@ -73,7 +83,7 @@ class MenuCommands:
                 ("All files", "*.*"),
             ],
             initialfile=default_filename,
-            initialdir=str(self.ctx.documents_dir),  # or whatever your real path is
+            initialdir=str(self.ctx.documents_dir),
         )
 
         if not filename:
@@ -82,41 +92,9 @@ class MenuCommands:
         path = Path(filename)
 
         try:
-            self.save_md(path)
+            if path.suffix == ".md":
+                self.saver.save_md(path)
+            else:
+                self.saver.save_txt(path)
         except OSError as exc:
             messagebox.showerror("Save failed", f"Could not save file {path}:\n{exc}")
-
-
-    def create_front_matter(self) -> list[str]:
-        front_matter: list[str] = [
-                "---",
-                f"title: {self.ui.title.get().strip()}",
-                f"url: {self.ui.url.get().strip()}",
-                f"video_format: {self.ui.video_format.get().strip()}",
-                f"video_id: {self.ui.video_id.get().strip()}" \
-                f"  transcript_type: {self.ui.transcript_type.get().strip()}" \
-                f"  extension: {self.ui.ext.get().strip()}" \
-                f"  video_resolution: {self.ui.resolution.get().strip()}",
-                f"file_size: {self.ui.file_size.get()}" \
-                f"  duration: {self.ui.duration.get().strip()}" \
-                f"  fps: {self.ui.fps.get()}" \
-                f"  bit_rate: {self.ui.bit_rate.get()} kbps"
-         ]
-        front_matter.append("---\n")
-        return front_matter
-
-
-    def save_md(self, filepath:Path) -> None:
-
-        front_matter = self.create_front_matter()
-
-        body = (
-            "\n".join(front_matter)
-            + "## Description\n\n"
-            + (self.ui.desc_txt.strip() + "\n\n" if
-               self.ui.desc_txt.strip() else "\n")
-            + "## Transcript / Output\n\n"
-            + self.ui.transcript_txt.rstrip()
-            + "\n"
-        )
-        filepath.write_text(body, encoding="utf-8")

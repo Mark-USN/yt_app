@@ -4,29 +4,33 @@
 
 from __future__ import annotations
 
-import time
+# from dataclasses import dataclass
+# from tkinter.ttk import Separator
 from urllib.parse import urlparse
-from tkinter import Tk, StringVar, IntVar, DoubleVar, Text # , Toplevel, filedialog, messagebox
+from tkinter import Tk, StringVar, Text # , Toplevel, filedialog, messagebox
+# from babel.numbers import format_number
 from yt_lib.yt_ids import extract_video_id
 from yt_lib.yt_transcript import youtube_json # , youtube_text, youtube_sentences
 from yt_lib.ytdlp_info import YtdlpInfo
 from yt_lib.utils.log_utils import get_logger
 from lib.app_context import RunContextStore
 from lib.info_cache import InfoManager
-# from lib.history_dialog import HistoryDialog
 from lib.format_transcript import json_to_sentences, json_to_text, convert_json
+from lib.display_field import DisplayField, DurationField, FileSizeField
 
 
 
 logger = get_logger(__name__)
 
-def format_hms(duration: int) -> str:
-    """ Turn seconds into hours:minutes:seconds. """
-    return time.strftime("%H:%M:%S", time.gmtime(duration))
 
 
 def is_valid_youtube_url(text: str) -> bool:
-    """ Basic check for whether a URL is a valid YouTube video URL. """
+    """ Basic check for whether a URL is a valid YouTube video URL.
+        Args:
+            text: The URL to check.
+        Returns:
+            True if the URL is a valid YouTube video URL, False otherwise.
+    """
     text = text.strip()
     if not text:
         return False
@@ -38,27 +42,35 @@ def is_valid_youtube_url(text: str) -> bool:
     return extract_video_id(text) is not None
 
 
-
-
 # @dataclass(slots=True)
 class UiVars:
-    """ Holds all Tk variables that widgets bind to, and knows how to apply metadata to them."""
+    """ Holds all Tk variables that widgets bind to, and knows how to apply metadata to them.
+        Also holds references to the RunContextStore, to determine file paths, and the InfoManager
+        (cache), to get metadata for URLs.
+
+        NOTE: The Discription and Transcript Text widgets are not stored as Tk variables, because
+        unlike the basic TkVars, the widgets must be created and manuipulated directly to update
+        their content. So instead, we store references to the Text widgets themselves, and update
+        them manually when the metadata changes.
+        Also, the Text windows are set to disabled by default, so any updates must temporarily
+        enable them, update the text, then disable them again to prevent user editing.
+    """
     root: Tk
     ctx: RunContextStore
     cache: InfoManager
     combo_url: StringVar
-    video_id: StringVar
-    title: StringVar
-    url: StringVar
-    transcript_type: StringVar
-    # out_format: StringVar
-    ext: StringVar
-    video_format: StringVar
-    resolution: StringVar
-    fps: DoubleVar
-    duration: StringVar
-    file_size: IntVar
-    bit_rate: DoubleVar
+    transcript_rb: StringVar
+    video_id: DisplayField
+    title: DisplayField
+    url: DisplayField
+    transcript_type: DisplayField
+    ext: DisplayField
+    video_format: DisplayField
+    resolution: DisplayField
+    fps: DisplayField
+    duration: DurationField
+    file_size: FileSizeField
+    bit_rate: DisplayField
     transcript_json: str
     desc_txt: str
     transcript_txt: str
@@ -74,23 +86,102 @@ class UiVars:
             ctx: RunContextStore,
             cache: InfoManager,
         ) -> None:
+        """ Initialize all variables and references.
+            Args:
+                root: The Tk root window, needed to create Tk variables.
+                ctx: The RunContextStore, to determine file paths.
+                cache: The InfoManager, to get metadata for URLs.        
+        """
         self.win = root
         self.ctx = ctx
         self.cache = cache
 
         self.combo_url = StringVar(self.win, "")
-        self.video_id = StringVar(self.win, "")
-        self.title = StringVar(self.win, "")
-        self.url = StringVar(self.win, "")
-        self.transcript_type = StringVar(self.win, "Json")
-        # self.out_format = StringVar(self.win, "markdown")
-        self.ext = StringVar(self.win, "")
-        self.video_format = StringVar(self.win, "")
-        self.resolution = StringVar(self.win, "")
-        self.fps = DoubleVar(self.win, 0.0)
-        self.duration = StringVar(self.win, "00:00:00 ")
-        self.file_size = IntVar(self.win, 0)
-        self.bit_rate = DoubleVar(self.win, 0.0)
+        self.transcript_rb = StringVar(self.win, "Json")
+        self.video_id = DisplayField.from_dict(
+                data={
+                    'ctx': self.ctx,
+                    'label':"Video ID",
+                    'var':StringVar(self.win, ""),
+                }
+            )
+        self.title = DisplayField.from_dict(
+
+                data={
+                   'ctx': self.ctx,
+                   'label':"Title",
+                    'var':StringVar(self.win, ""),
+                }
+            )
+        self.url = DisplayField.from_dict(
+                data={
+                    'ctx': self.ctx,
+                    'label':"URL",
+                    'var':StringVar(self.win, ""),
+                }
+            )
+        self.transcript_type = DisplayField.from_dict(
+                data={
+                    'ctx': self.ctx,
+                    'label':"Transcript Type",
+                    # 'var':StringVar(self.win, "Json"),
+                    'var':StringVar(self.win, self.transcript_rb.get()),
+                }
+            )
+        # self.transcript_type.set("Json")
+        self.ext = DisplayField.from_dict(
+                data={
+                    'ctx': self.ctx,
+                    'label':"Extension",
+                    'var':StringVar(self.win, ""),
+                }
+            )
+        self.video_format = DisplayField.from_dict(
+                data={
+                    'ctx': self.ctx,
+                    'label':"Video Format",
+                    'var':StringVar(self.win, ""),
+                }
+            )
+        self.resolution = DisplayField.from_dict(
+                data={
+                    'ctx': self.ctx,
+                    'label':"Resolution",
+                    'var':StringVar(self.win, ""),
+                }
+            )
+        self.fps = DisplayField.from_dict(
+                            data={
+                                'ctx': self.ctx,
+                                'label':"FPS",
+                                'var':StringVar(self.win, ""),
+                                'decimals':0,
+                                'is_int':True,
+                            }
+            )
+        self.duration = DurationField.from_dict(
+                            data={
+                                'ctx': self.ctx,
+                                'label':"Duration",
+                                'var':StringVar(self.win, ""),
+                            }
+            )
+        self.file_size = FileSizeField.from_dict(
+                            data={
+                                'ctx': self.ctx,
+                                'label':"File Size",
+                                'var':StringVar(self.win, ""),
+                            }
+            )
+        self.bit_rate = DisplayField.from_dict(
+                            data={
+                                'ctx':self.ctx,
+                                'label':"Bit Rate",
+                                'decimals':4,
+                                'var':StringVar(self.win, ""),
+                                'units':"Mbps",
+                            }
+            )
         self.transcript_json = ""
         self.desc_txt = """- Description -"""
         self.transcript_txt = """- Transcript -"""
@@ -103,6 +194,8 @@ class UiVars:
     def set_desc_widget(self, widget: Text) -> None:
         """ Store a reference to the description Text widget, so we can 
             update it when metadata changes.
+            Args:
+                widget: The Text widget that displays the video description.
         """
         self.desc_widget = widget
         self.set_text(self.desc_widget, self.desc_txt)
@@ -112,6 +205,8 @@ class UiVars:
     def set_transcript_widget(self, widget: Text) -> None:
         """ Store a reference to the transcript Text widget, so we can 
             update it when metadata changes
+            Args:
+                widget: The Text widget that displays the video transcript.
         """
         self.transcript_widget = widget
         self.set_text(self.transcript_widget, self.transcript_txt)
@@ -123,16 +218,17 @@ class UiVars:
     def clear(self) -> None:
         """ Set default values for the widgets. """
         self.combo_url.set("")
+        self.transcript_rb.set("Json")
         self.video_id.set("")
         self.title.set("")
         self.url.set("")
-        self.transcript_type.set("Json")
+        self.transcript_type.set(self.transcript_rb.get())
         # self.out_format.set("markdown")
         self.ext.set("")
         self.resolution.set("")
         self.video_format.set("")
-        self.fps.set(0.0)
-        self.duration.set("00:00:00")
+        self.fps.set(0)
+        self.duration.set("00")
         self.file_size.set(0)
         self.bit_rate.set(0.0)
         self.transcript_json = ""
@@ -151,18 +247,21 @@ class UiVars:
 
     def ui_change(self) -> None:
         """
-        Convert/cache metadata -> widget variables.
-        Keep ALL mapping/formatting rules here.
+            Convert/cache metadata -> widget variables.
+            Keep ALL mapping/formatting rules here.
+
+            Called whenever the URL changes, or the transcript type changes, to update all
+            metadata fields and the transcript.
         """
         combo_url = self.combo_url.get().strip()
         if not combo_url:
             return
         if not is_valid_youtube_url(combo_url):
             return
-        info: YtdlpInfo = self.cache.get_YtdlpInfo(combo_url)
+        info: YtdlpInfo = self.cache.get_ytdlpinfo(combo_url)
 
         # Required
-
+        self.transcript_type.set(self.transcript_rb.get())
         self.video_id.set(str(info.id).strip())
         self.title.set(str(info.title).strip())
         self.url.set(str(info.webpage_url).strip())
@@ -172,17 +271,17 @@ class UiVars:
         self.video_format.set(str(info.format_name or "").strip())
         self.resolution.set(str(info.best_format.computed_resolution) or "")
 
-        fps = info.best_format.fps
-        try:
-            self.fps.set(float(fps) if fps is not None else 0.0)
-        except (TypeError, ValueError):
-            self.fps.set(0.0)
+        self.fps.set(info.best_format.fps)
+        # try:
+        #     self.fps.set(float(fps) if fps is not None else 0.0)
+        # except (TypeError, ValueError):
+        #     self.fps.set(0.0)
 
         # duration: store as string for display
-        self.duration.set(format_hms(info.selection_summary.duration_s))
+        self.duration.set(info.selection_summary.duration_s)
 
-        self.file_size.set(info.best_format.best_filesize)
-        self.bit_rate.set(info.best_format.tbr_kbps)
+        self.file_size.set(info.selection_summary.total_filesize_bytes)
+        self.bit_rate.set(info.selection_summary.total_mbps_from_filesize)
 
         self.desc_txt = info.description.strip() if info.description else "- Description -"
         if self.desc_widget is not None:
@@ -191,7 +290,7 @@ class UiVars:
             self.previous_url = combo_url
             self.transcript_json = youtube_json(combo_url)
         # ---- transcript output ----
-        match str(self.transcript_type.get()).lower().strip():
+        match str(self.transcript_rb.get()).lower().strip():
             case "json":
                 self.transcript_txt = convert_json(self.transcript_json)
             case "text":
@@ -215,7 +314,11 @@ class UiVars:
 
 
     def set_text(self,widget: Text, value: str) -> None:
-        """ Update disabled Text widgets. """
+        """ Update disabled Text widgets. 
+            Args:
+                widget: The Text widget to update. Must be disabled, since it's only for display.
+                value: The text to insert into the widget.
+        """
         widget.configure(state="normal")
         widget.delete("1.0", "end")
         widget.insert("1.0", value)

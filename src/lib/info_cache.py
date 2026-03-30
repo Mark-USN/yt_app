@@ -12,8 +12,8 @@ from yt_lib.ytdlp_info import (
                                 YtdlpInfo,
                                 fetch_YtdlpInfo_object,
                                 write_info,
-                                read_YtdlpInfo,
-                                write_YtdlpInfo
+                                read_YtdlpInfo
+                                # write_YtdlpInfo
                             )
 from yt_lib.utils.log_utils import get_logger
 from .app_context import RunContextStore
@@ -37,7 +37,7 @@ class YouTubeSource:
     title: str
 
     @classmethod
-    def from_YtdlpInfo(cls, *, info: YtdlpInfo) -> YouTubeSource:
+    def from_ytdlpinfo(cls, *, info: YtdlpInfo) -> YouTubeSource:
         """ Grabs the data from data returned from the cache. """
         return cls(
             kind=YoutubeIdKind.VIDEO,
@@ -98,7 +98,7 @@ class InfoManager:
                 continue
             try:
                 info = read_YtdlpInfo(p)
-                yt_source: YouTubeSource = YouTubeSource.from_YtdlpInfo(info=asdict(info))
+                yt_source: YouTubeSource = YouTubeSource.from_ytdlpinfo(info=asdict(info))
                 entries.append((p.stat().st_mtime, yt_source))
             except OSError:
                 continue
@@ -113,7 +113,7 @@ class InfoManager:
             return self.info_path_for(yt_source.id)
         return None
 
-    def get_latest_YtdlpInfo(self) -> YtdlpInfo | None:
+    def get_latest_ytdlpinfo(self) -> YtdlpInfo | None:
         """Return YtdlpInfo from the newest cache entry, or None if none readable."""
         latest_file = self.get_latest_file()
         if not latest_file or not latest_file.is_file():
@@ -195,7 +195,7 @@ class InfoManager:
     # Write/update cache entries
     # ----------------------------
 
-    def cache_YtdlpInfo(self, info: YtdlpInfo) -> None:
+    def cache_ytdlpinfo(self, info: YtdlpInfo) -> None:
         """
         Cache YtdlpInfo for a YouTube source.
 
@@ -219,7 +219,7 @@ class InfoManager:
         write_info(info_file, info.raw)
         logger.info("Cached Ytdlp_info to %s.", info_file)
 
-        yt_source = YouTubeSource.from_YtdlpInfo(info=asdict(info))
+        yt_source = YouTubeSource.from_ytdlpinfo(info=asdict(info))
         self._prepend_to_index(yt_source)
         # return info_file
 
@@ -253,7 +253,7 @@ class InfoManager:
     # ----------------------------
 
 
-    def get_YtdlpInfo(self, url: str) -> YtdlpInfo:
+    def get_ytdlpinfo(self, url: str) -> YtdlpInfo:
         """ Get YtdlpInfo for a URL, checking the cache for the url 
             and if found update the cache list.  If it is not in the cache 
             get it from yt-dlp and put it in the top of the list.
@@ -275,7 +275,7 @@ class InfoManager:
                             break  # fallback to fetching fresh metadata
             # If we didn’t find a valid cache entry, fetch fresh metadata.
             new_info: YtdlpInfo = fetch_YtdlpInfo_object(url)
-            self.cache_YtdlpInfo(new_info)
+            self.cache_ytdlpinfo(new_info)
             return new_info
 
         except Exception as e:  # pylint: disable=broad-exception-caught

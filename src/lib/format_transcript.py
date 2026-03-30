@@ -6,12 +6,9 @@
 from __future__ import annotations
 
 import re
-# from dataclasses import dataclass
-# from pathlib import Path
 from typing import Sequence
 from yt_lib.yt_transcript import TranscriptSnippet
 from yt_lib.utils.log_utils import get_logger
-# from lib.app_context import RunContextStore
 
 logger = get_logger(__name__)
 
@@ -21,6 +18,13 @@ _SENTENCE_PATTERN: re.Pattern[str] = re.compile(
 )
 
 def split_sentences(text: str) -> tuple[list[str], str]:
+    """ Splits the input text into sentences based on punctuation marks. 
+        Args:
+            text: The input text to split into sentences.
+        Returns:
+            A tuple containing a list of sentences and any remaining text that
+            did not match the sentence pattern.
+    """
     out: list[str] = []
     last_end = 0
 
@@ -34,6 +38,19 @@ def split_sentences(text: str) -> tuple[list[str], str]:
 
 
 def json_to_sentences(transcript_list: Sequence["TranscriptSnippet"]) -> str:
+    """ Converts a list of transcript snippets into a formatted string of sentences. 
+        Args:
+            transcript_list: A list of transcript snippets, where each snippet is a dictionary
+                                containing a "text" field.
+        Returns:
+            A formatted string of sentences.
+        Note:
+            This function processes each transcript snippet, concatenating the text and splitting
+            it into sentences based on punctuation marks. It handles cases where sentences may 
+            span across multiple snippets, ensuring that the output is a coherent sequence of
+            sentences.  It is only as good as the transcript's punctuation, and can take a long
+            time if the punctuation is sparce. So it may not always produce perfect results.
+    """
 
     sentences: list[str] = []
 
@@ -55,6 +72,15 @@ def json_to_sentences(transcript_list: Sequence["TranscriptSnippet"]) -> str:
     return "\n".join(sentences)
 
 def json_to_text(transcript_list: Sequence["TranscriptSnippet"]) -> str:
+    """ Converts a list of transcript snippets into a single string of text.
+        Args:
+            transcript_list: A list of transcript snippets, where each snippet is a dictionary
+                                containing a "text" field.
+        Returns:
+            A single string of text concatenated from all the transcript snippets.  With each
+            line containing the text from one snippet.  This is a simpler format than
+            json_to_sentences, and is faster to produce.
+    """
 
     sentences: list[str] = []
 
@@ -68,6 +94,15 @@ def json_to_text(transcript_list: Sequence["TranscriptSnippet"]) -> str:
     return "\n".join(sentences)
 
 def convert_json(transcript_list: Sequence["TranscriptSnippet"])->str:
+    """ Converts a list of transcript snippets into a formatted string representation
+        of the original JSON structure with text, start time and duration.
+        Args:
+            transcript_list: A list of transcript snippets, where each snippet is a dictionary
+                                containing "text", "start", and "duration" fields.
+        Returns:
+            A formatted string representation of the transcript snippets, preserving
+            the original JSON structure with text, start time, and duration.
+    """
     snippets: list[str] = []
 
     for entry in transcript_list:

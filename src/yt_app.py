@@ -10,14 +10,9 @@ and display metadata + transcript in a GUI.
 
 from __future__ import annotations
 
-
-# from dataclasses import dataclass
-# from pathlib import Path
 from tkinter import Tk, Text # , StringVar, IntVar, DoubleVar, Menu, filedialog, messagebox
 from tkinter import ttk
-# from yt_lib.ytdlp_info import YtdlpInfo
 from yt_lib.utils.log_utils import configure_logging, LogConfig, FileLogConfig, get_logger
-# from lib import menus
 from lib.app_context import create_runtime_context, RunContextStore
 from lib.info_cache import InfoManager
 from lib.ui_vars import UiVars, is_valid_youtube_url
@@ -109,56 +104,30 @@ def main() -> None:
     info_frame = ttk.Frame(top_frame, padding=(6, 6, 12, 12), borderwidth=1, relief="ridge")
     info_frame.grid(column=0, row=1, sticky="nsew", padx=6, pady=(0, 6))
 
-    for c in range(10):
+    for c in range(4):
         info_frame.columnconfigure(c, weight=1)
 
-
-    ttk.Label(info_frame, text="Title: ").grid(column=0, row=0, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.title).grid(column=1,
-                    row=0, columnspan=9, sticky="w")
-
-    ttk.Label(info_frame, text="URL: ").grid(column=0, row=1, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.url).grid(column=1,
-                    row=1, columnspan=9, sticky="w")
-
-    ttk.Label(info_frame, text="Video Format: ").grid(column=0, row=2, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.video_format).grid(column=1,
-                    row=2, columnspan=9, sticky="w")
-
-    ttk.Label(info_frame, text="Video Id: ").grid(column=0, row=3, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.video_id).grid(column=1, row=3, sticky="w")
-
-    ttk.Label(info_frame, text="Transcript Type:").grid(column=2, row=3, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.transcript_type).grid(column=3, row=3, sticky="w")
-
-    ttk.Label(info_frame, text="Extension:").grid(column=4, row=3, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.ext).grid(column=5, row=3, sticky="w")
-
-    ttk.Label(info_frame, text="Video Resolution:").grid(column=6, row=3, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.resolution).grid(column=7, row=3, sticky="w")
-
-    ttk.Label(info_frame, text="File Size:").grid(column=0, row=4, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.file_size).grid(column=1, row=4, sticky="w")
-
-    ttk.Label(info_frame, text="Duration:").grid(column=2, row=4, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.duration).grid(column=3, row=4, sticky="w")
-
-    ttk.Label(info_frame, text="fps:").grid(column=4, row=4, sticky="w")
-    ttk.Label(info_frame, textvariable=ui_vars.fps).grid(column=5, row=4, sticky="w")
-
-    ttk.Label(info_frame, text="Bit Rate:").grid(column=6, row=4, sticky="e")
-    ttk.Label(info_frame, textvariable=ui_vars.bit_rate).grid(column=7, row=4, sticky="e")
-    ttk.Label(info_frame, text="kbs").grid(column=8, row=4, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.title.var).grid(column=0,
+                    row=0, columnspan=4, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.url.var).grid(column=0,
+                    row=1, columnspan=4, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.video_format.var).grid(column=0,
+                    row=2, columnspan=4, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.video_id.var).grid(column=0, row=3, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.transcript_type.var).grid(column=1, row=3,
+                sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.ext.var).grid(column=2, row=3, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.resolution.var).grid(column=3, row=3, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.file_size.var).grid(column=0, row=4, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.duration.var).grid(column=1, row=4, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.fps.var).grid(column=2, row=4, sticky="w")
+    ttk.Label(info_frame, textvariable=ui_vars.bit_rate.var).grid(column=3, row=4, sticky="w")
 
     # --- Options frame on the right of URL + info ---
     option_frame = ttk.Frame(top_frame, padding=(6, 6, 12, 12), borderwidth=1, relief="ridge")
     # pady(0, 6) aligns the bottom of this frame with the bottom of the info frame, and the top
     # with the top of the URL frame
     option_frame.grid(column=1, row=0, rowspan=2, sticky="ns", padx=6, pady=(0, 6))
-
-
-
-
 
     def open_history() -> None:
         prompts: list[dict[str,str]] = cache.get_cached_prompts()
@@ -181,19 +150,19 @@ def main() -> None:
     ttk.Radiobutton(
         option_frame,
         text="Json",
-        variable=ui_vars.transcript_type,
+        variable=ui_vars.transcript_rb,
         value="Json",
     ).grid(column=0, row=2, sticky="w", padx=6)
     ttk.Radiobutton(
         option_frame,
         text="Text",
-        variable=ui_vars.transcript_type,
+        variable=ui_vars.transcript_rb,
         value="Text",
     ).grid(column=0, row=3, sticky="w", padx=6)
     ttk.Radiobutton(
         option_frame,
         text="Sentences",
-        variable=ui_vars.transcript_type,
+        variable=ui_vars.transcript_rb,
         value="Sentences",
     ).grid(column=0, row=4, sticky="w", padx=6)
 
@@ -243,9 +212,12 @@ def main() -> None:
     def on_format_change(*_args: object) -> None:
         if is_valid_youtube_url(cmbo_url.get()):
             do_populate()
+        else:
+            # If the URL is not valid, just update the transcript type variable so it shows in the
+            # info section.
+            ui_vars.transcript_type.set(ui_vars.transcript_rb.get())
 
-    ui_vars.transcript_type.trace_add("write", on_format_change)
-    # ui_vars.out_format.trace_add("write", on_format_change)
+    ui_vars.transcript_rb.trace_add("write", on_format_change)
 
     root.mainloop()
 

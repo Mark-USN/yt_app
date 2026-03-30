@@ -1,3 +1,4 @@
+""" Modal dialog to display history titles in the cache and return the selected URL."""
 from __future__ import annotations
 
 from typing import TypedDict
@@ -5,13 +6,13 @@ from tkinter import font
 from tkinter import Tk, Toplevel, Listbox, Event, Misc, END
 from tkinter import ttk
 from yt_lib.utils.log_utils import get_logger
-# from lib.info_cache import InfoManager
-
 
 logger = get_logger(__name__)
 
-
 class HistoryItem(TypedDict):
+    """ Represents a history item with a title and URL. The title combines the Video Id and the
+        Video's title.
+    """
     title: str
     url: str
 
@@ -28,6 +29,12 @@ class HistoryDialog(Toplevel):
         *,
         title: str = "History",
     ) -> None:
+        """ Initialize the history dialog.
+            Args:
+                parent: The parent window.
+                items: A list of history items, each containing a 'title' and 'url'.
+                title: The title of the dialog window.
+        """
         super().__init__(parent)
 
         self.items = items
@@ -115,7 +122,10 @@ class HistoryDialog(Toplevel):
         self.listbox.focus_set()
 
     def center_over_parent(self, parent: Misc) -> None:
-        """Center dialog over parent window."""
+        """ Center dialog over parent window.
+            Args:
+                parent: The parent window to center over.
+        """
         self.update_idletasks()
 
         parent_x = parent.winfo_rootx()
@@ -131,7 +141,11 @@ class HistoryDialog(Toplevel):
 
         self.geometry(f"+{x}+{y}")
 
-    def on_ok(self, event: Event[Misc] | None = None) -> None:
+    def on_ok(self, _event: Event[Misc] | None = None) -> None:
+        """ Handle the OK button press or double-click event.
+            Args:
+                event: The event that triggered the callback, if any.
+        """
         selection = self.listbox.curselection()
         if not selection:
             return
@@ -141,7 +155,11 @@ class HistoryDialog(Toplevel):
         self.result = self.items[index]['url']
         self.destroy()
 
-    def on_cancel(self, event: Event[Misc] | None = None) -> None:
+    def on_cancel(self, _event: Event[Misc] | None = None) -> None:
+        """ Handle the Cancel button press or Escape key event.
+            Args:
+                event: The event that triggered the callback, if any.
+        """
         self.result = None
         self.destroy()
 
@@ -150,7 +168,13 @@ def ask_history_url(
     parent: Misc,
     items: list[dict[str,str]],
 ) -> str | None:
-    """Open the modal history dialog and return the selected URL or None."""
+    """ Open the modal history dialog and return the selected URL or None.
+        Args:
+            parent: The parent window.
+            items: A list of history items, each containing a 'title' and 'url'.
+        Returns:
+            The URL of the selected history item, or None if cancelled.
+    """
     dialog = HistoryDialog(parent, items)
     parent.wait_window(dialog)
     return dialog.result
