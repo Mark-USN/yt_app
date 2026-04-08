@@ -4,11 +4,8 @@
 
 from __future__ import annotations
 
-# from dataclasses import dataclass
-# from tkinter.ttk import Separator
 from urllib.parse import urlparse
 from tkinter import Tk, StringVar, Text # , Toplevel, filedialog, messagebox
-# from babel.numbers import format_number
 from yt_lib.yt_ids import extract_video_id
 from yt_lib.yt_transcript import youtube_json # , youtube_text, youtube_sentences
 from yt_lib.ytdlp_info import YtdlpInfo
@@ -17,12 +14,15 @@ from lib.app_context import RunContextStore
 from lib.info_cache import InfoManager
 from lib.format_transcript import json_to_sentences, json_to_text, convert_json
 from lib.display_field import DisplayField, DurationField, FileSizeField
-
-
+from lib.print.layout_types import (
+        RenderItem,
+        LineItem,
+        CenteredLineItem,
+        ParagraphItem,
+        BlocksItem
+    )
 
 logger = get_logger(__name__)
-
-
 
 def is_valid_youtube_url(text: str) -> bool:
     """ Basic check for whether a URL is a valid YouTube video URL.
@@ -79,7 +79,6 @@ class UiVars:
     previous_url: str
 
 
-
     def __init__(
             self,
             root: Tk,
@@ -106,7 +105,6 @@ class UiVars:
                 }
             )
         self.title = DisplayField.from_dict(
-
                 data={
                    'ctx': self.ctx,
                    'label':"Title",
@@ -189,8 +187,6 @@ class UiVars:
         self.transcript_widget = None
         self.previous_url = ""
 
-
-
     def set_desc_widget(self, widget: Text) -> None:
         """ Store a reference to the description Text widget, so we can 
             update it when metadata changes.
@@ -210,9 +206,6 @@ class UiVars:
         """
         self.transcript_widget = widget
         self.set_text(self.transcript_widget, self.transcript_txt)
-
-
-
 
 
     def clear(self) -> None:
@@ -272,10 +265,6 @@ class UiVars:
         self.resolution.set(str(info.best_format.computed_resolution) or "")
 
         self.fps.set(info.best_format.fps)
-        # try:
-        #     self.fps.set(float(fps) if fps is not None else 0.0)
-        # except (TypeError, ValueError):
-        #     self.fps.set(0.0)
 
         # duration: store as string for display
         self.duration.set(info.selection_summary.duration_s)
@@ -283,7 +272,7 @@ class UiVars:
         self.file_size.set(info.selection_summary.total_filesize_bytes)
         self.bit_rate.set(info.selection_summary.total_mbps_from_filesize)
 
-        self.desc_txt = info.description.strip() if info.description else "- Description -"
+        self.desc_txt = info.description.strip() if info.description else ""
         if self.desc_widget is not None:
             self.set_text(self.desc_widget, self.desc_txt)
         if combo_url != self.previous_url:
@@ -301,8 +290,8 @@ class UiVars:
                 self.transcript_txt = f"Unknown format: {self.transcript_type.get()}"
 
         if self.transcript_widget is not None:
-            if not self.transcript_txt.strip():
-                self.transcript_txt = "- Transcript -"
+            # if not self.transcript_txt.strip():
+            #     self.transcript_txt = "- Transcript -"
             self.set_text(self.transcript_widget, self.transcript_txt)
 
 
@@ -324,3 +313,40 @@ class UiVars:
         widget.insert("1.0", value)
         widget.see("1.0")
         widget.configure(state="disabled")
+
+# pylint: disable=too-few-public-methods
+class UiDoc:
+    """ A simple class to hold the content to be printed, and convert it into a list of
+        RenderItems for the print dialog.
+    """
+
+    def __init__(self, ui_vars:UiVars):
+        self.ui: UiVars = ui_vars
+        self.lines: list[RenderItem] = []
+        self.lines.append(CenteredLineItem(f"Transcript of Youtube video {self.ui.video_id.get()}"))
+        self.lines.append(LineItem(self.ui.title.var.get()))
+        self.lines.append(LineItem(self.ui.url.var.get()))
+        self.lines.append(LineItem(self.ui.video_format.var.get()))
+        self.lines.append(BlocksItem(
+            [
+                self.ui.video_id.var.get(),
+                self.ui.transcript_type.var.get(),
+                self.ui.ext.var.get(),
+                self.ui.resolution.var.get(),
+                self.ui.fps.var.get(),
+                self.ui.duration.var.get(),
+                self.ui.file_size.var.get(),
+                self.ui.bit_rate.var.get()
+            ]
+        ))
+
+        self.lines.append(LineItem("Description:"))
+        self.lines.append(ParagraphItem(self.ui.desc_txt.splitlines()))
+        self.lines.append(LineItem("Transcript:"))
+        self.lines.append(ParagraphItem(self.ui.transcript_txt.splitlines()))
+
+    def get(self) -> list[RenderItem]:
+        """ Get the content of the document as a list of RenderItems, which can be passed to the
+            print dialog.
+        """
+        return self.lines

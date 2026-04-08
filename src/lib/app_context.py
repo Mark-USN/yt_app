@@ -5,7 +5,6 @@ Module to hold global constants and shared objects.
 """
 from __future__ import annotations
 
-# import locale
 import ctypes
 from ctypes import wintypes
 from dataclasses import dataclass
@@ -64,7 +63,7 @@ def detect_locale(default: str = "en_US") -> str:
             return default
         # Convert from e.g. 'en-US'
         return loc.replace("-", "_")
-    except Exception:
+    except Exception:                   # pylint: disable=broad-exception-caught
         return default
 
 

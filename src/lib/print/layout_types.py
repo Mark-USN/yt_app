@@ -118,6 +118,18 @@ class LineItem:
 
     text: str
 
+@dataclass(slots=True, frozen=True)
+class CenteredLineItem:
+    """
+    A single logical source line.
+
+    This item may wrap onto multiple rendered lines if it exceeds the
+    available width.
+    """
+
+    text: str
+
+
 
 @dataclass(slots=True, frozen=True)
 class ParagraphItem:
@@ -143,4 +155,4 @@ class BlocksItem:
     blocks: list[str]
 
 
-type RenderItem = LineItem | ParagraphItem | BlocksItem
+type RenderItem = LineItem | CenteredLineItem | ParagraphItem | BlocksItem

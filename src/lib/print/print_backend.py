@@ -19,14 +19,19 @@ from typing import Protocol, TYPE_CHECKING
 import win32gui     # pylint: disable=import-error
 import win32con     # pylint: disable=import-error
 import win32ui      # pylint: disable=import-error
-
+import win32print   # pylint: disable=import-error
 from lib.print.layout_engine import expand_items_to_lines
 from lib.print.layout_types import PageLayout, RenderItem, RenderLine, TextDrawer
 if TYPE_CHECKING:
     from lib.print.layout_types import TextMeasurer
 
+COMMON_FONT_SIZES: list[int] = [
+    8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72,
+]
+
+
 # pylint: disable=too-few-public-methods, invalid-name
-class PrinterDC(Protocol):
+class PrinterDeviceContext(Protocol):
     """Structural type describing the subset of pywin32 CDC methods used here."""
 
     def GetTextExtent(self, text: str) -> tuple[int, int]:
@@ -63,7 +68,7 @@ class PrinterDC(Protocol):
 class PrinterMeasurer:
     """Measure text widths in printer device units."""
 
-    def __init__(self, dc: PrinterDC) -> None:
+    def __init__(self, dc: PrinterDeviceContext) -> None:
         """
         Initialize the measurer.
 
@@ -95,7 +100,7 @@ class PrinterMeasurer:
 class PrinterDrawer:
     """Draw text to a printer device context."""
 
-    def __init__(self, dc: PrinterDC) -> None:
+    def __init__(self, dc: PrinterDeviceContext) -> None:
         """
         Initialize the drawer.
 
@@ -122,8 +127,80 @@ class PrinterDrawer:
         self._dc.TextOut(int(round(x)), int(round(y)), text)
 
 
+def create_printer_dc(printer_name: str) -> win32ui.CDC:
+    """ Create and return a printer device context for the given printer name."""
+    dc = win32ui.CreateDC()                                     # pylint: disable=c-extension-no-member
+    if printer_name is None or printer_name.strip().lower() == "default":
+        printer_name = win32print.GetDefaultPrinter()           # pylint: disable=c-extension-no-member
+    dc.CreatePrinterDC(printer_name)
+    return dc
+
+def get_default_printer() -> str:
+    """Return the name of the default printer."""
+    return win32print.GetDefaultPrinter()                       # pylint: disable=c-extension-no-member
+
+
+def list_printers() -> list[str]:
+    """Return a list of available printer names."""
+    # pylint: disable=c-extension-no-member
+    printers = win32print.EnumPrinters(
+        win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS
+    )
+    return [p[2] for p in printers]
+
+
+# Font type flags (from Wingdi.h)
+RASTER_FONTTYPE = 0x01
+DEVICE_FONTTYPE = 0x02
+TRUETYPE_FONTTYPE = 0x04
+
+
+def list_fonts(dc: win32ui.CDC) -> list[str]:
+    """Return sorted unique font face names usable for printing.
+
+    Includes:
+        - TrueType fonts
+        - Device (printer-resident) fonts
+    Excludes:
+        - Raster fonts
+    """
+    fonts: set[str] = set()
+
+    def callback(logfont, _textmetric, font_type, _data):
+        # Keep TrueType OR Device fonts
+        if font_type & (TRUETYPE_FONTTYPE | DEVICE_FONTTYPE):
+            face = logfont.lfFaceName
+            if face:
+                fonts.add(face)
+        return 1  # continue enumeration
+
+    hdc = dc.GetSafeHdc()                                   # pylint: disable=c-extension-no-member
+    win32gui.EnumFontFamilies(hdc, None, callback, None)    # pylint: disable=c-extension-no-member
+
+    return sorted(fonts)
+
+def get_printer_fonts(printer_name: str) -> list[str]:
+    """ Create a printer DC for the given printer name and return a list of usable font face names.
+        args:
+            printer_name: The name of the printer to query fonts for. If empty or "default
+            (case-insensitive), the default printer will be used.
+        Returns:
+            A sorted list of font face names that are usable for printing on the specified printer.
+    """
+    dc = win32ui.CreateDC()                                 # pylint: disable=c-extension-no-member
+    prn_name = printer_name.strip()
+    try:
+        if prn_name:
+            dc.CreatePrinterDC(prn_name)                    # pylint: disable=c-extension-no-member
+        else:
+            prn_name = dc.GetDefaultPrinter()               # pylint: disable=c-extension-no-member
+            dc.CreatePrinterDC(prn_name)                    # pylint: disable=c-extension-no-member
+        return list_fonts(dc)
+    finally:
+        dc.DeleteDC()                                       # pylint: disable=c-extension-no-member
+
 def create_printer_font(
-    dc: PrinterDC,
+    dc: PrinterDeviceContext,
     *,
     face_name: str,
     point_size: float,
@@ -167,7 +244,7 @@ def create_printer_font(
 
 
 def get_printer_layout(
-    dc: PrinterDC,
+    dc: PrinterDeviceContext,
     *,
     point_size: float,
     margin_inches: float = 0.5,
@@ -306,10 +383,11 @@ def print_items(
         Requested font size in points.
     """
     dc = win32ui.CreateDC()             # pylint: disable=c-extension-no-member
-    dc.CreatePrinterDC(printer_name)
+    dc.CreatePrinterDC(printer_name)    # pylint: disable=c-extension-no-member
 
-    font = create_printer_font(dc, face_name=face_name, point_size=point_size)
-    old_font = dc.SelectObject(font)
+    font = create_printer_font(dc, face_name=face_name,
+                               point_size=point_size)  # pylint: disable=c-extension-no-member
+    old_font = dc.SelectObject(font)    # pylint: disable=c-extension-no-member
 
     try:
         measurer = PrinterMeasurer(dc)
@@ -329,19 +407,3 @@ def print_items(
         if old_font is not None:
             dc.SelectObject(old_font)
         dc.DeleteDC()
-
-
-def list_fonts(dc: win32ui.CDC) -> set[str]:  # pylint: disable=c-extension-no-member
-    """Return a set of available font names for the given device context."""
-
-    fonts: set[str] = set()
-
-    def callback(logfont, _textmetric, _fonttype, _param):
-        fonts.add(logfont.lfFaceName)
-        return True
-
-    lf = win32gui.LOGFONT()  # pylint: disable=c-extension-no-member
-    lf.lfCharSet = win32con.DEFAULT_CHARSET  # pylint: disable=c-extension-no-member
-
-    win32gui.EnumFontFamiliesEx(dc.GetHandleOutput(), lf, callback, None)  # pylint: disable=c-extension-no-member
-    return fonts

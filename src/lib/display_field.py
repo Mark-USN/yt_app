@@ -172,16 +172,3 @@ class BitRateField(DisplayField):
         """ Get the underlying value of the field as an integer representing bits per second. """
         value = self._value
         return int(value) if value is not None else None
-
-    # def render(self) -> str:
-    #     """ Render the field's value as a formatted bit rate string with appropriate units.
-    #         The initial value is expected to be in kilobits per second, and it will be
-    #         formatted into kbps, or Mbps
-    #     """
-    #     rate = self.get()
-    #     mb = 1024.0
-    #     if rate is None:
-    #         return f"{self.label}{self.sep}{self.ctx.format_number(0, decimals=3)} kbps"
-    #     if rate < mb:
-    #         return f"{self.label}{self.sep}{self.ctx.format_number(rate, decimals=3)} kbps"
-    #     return f"{self.label}{self.sep}{self.ctx.format_number(rate/mb, decimals=3)} Mbps"
