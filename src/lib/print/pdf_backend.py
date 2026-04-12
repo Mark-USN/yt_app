@@ -22,6 +22,24 @@ from reportlab.pdfgen.canvas import Canvas
 from lib.print.layout_engine import expand_items_to_lines
 from lib.print.layout_types import PageLayout, RenderItem, RenderLine, TextDrawer
 
+
+PDF_FONT_NAMES: list[str] = [
+    "Courier",
+    "Courier-Bold",
+    "Courier-BoldOblique",
+    "Courier-Oblique",
+    "Helvetica",
+    "Helvetica-Bold",
+    "Helvetica-BoldOblique",
+    "Helvetica-Oblique",
+    "Symbol",
+    "Times-Bold",
+    "Times-BoldItalic",
+    "Times-Italic",
+    "Times-Roman",
+    "ZapfDingbats",
+]
+
 # pylint: disable=too-few-public-methods
 class PdfMeasurer:
     """Measure text widths in PDF points."""

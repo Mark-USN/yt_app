@@ -20,15 +20,14 @@ import win32gui     # pylint: disable=import-error
 import win32con     # pylint: disable=import-error
 import win32ui      # pylint: disable=import-error
 import win32print   # pylint: disable=import-error
+from yt_lib.utils.log_utils import get_logger
 from lib.print.layout_engine import expand_items_to_lines
 from lib.print.layout_types import PageLayout, RenderItem, RenderLine, TextDrawer
 if TYPE_CHECKING:
     from lib.print.layout_types import TextMeasurer
 
-COMMON_FONT_SIZES: list[int] = [
-    8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72,
-]
 
+logger = get_logger(__name__)
 
 # pylint: disable=too-few-public-methods, invalid-name
 class PrinterDeviceContext(Protocol):
@@ -403,6 +402,9 @@ def print_items(
             _render_printer_page(page, drawer=drawer, layout=layout)
             dc.EndPage()
         dc.EndDoc()
+    # except Exception as e:
+    #     logger.error("Microsoft PDF printer error: %s", e)
+
     finally:
         if old_font is not None:
             dc.SelectObject(old_font)

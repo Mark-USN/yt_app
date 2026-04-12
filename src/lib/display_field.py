@@ -1,8 +1,9 @@
 """ A DisplayField represents a single piece of information to be displayed in the UI.
-    It combines data's title, a seperator and the formatted metadata and possibly units 
+    It combines data's title, a seperator, locale formatted metadata and possibly units 
     into a single string that can be easily displayed in the UI. 
     It holds a reference to a StringVar that the UI widget binds to, and knows how to 
-    format its value for display based on its metadata.
+    format its value for display based on its metadata. It also holds and can return the
+    raw value for use in calculations or other logic.
 
 """
 
@@ -162,13 +163,3 @@ class FileSizeField(DisplayField):
         if size < mb:
             return f"{self.label}{self.sep}{self.ctx.format_number(size / kb, decimals=3)} KB"
         return f"{self.label}{self.sep}{self.ctx.format_number(size / mb, decimals=3)} MB"
-
-@dataclass(slots=True)
-class BitRateField(DisplayField):
-    """ A specialized DisplayField for formatting bit rates in bits per second into
-        human-readable strings with appropriate units. 
-    """
-    def get(self) -> int | None:
-        """ Get the underlying value of the field as an integer representing bits per second. """
-        value = self._value
-        return int(value) if value is not None else None

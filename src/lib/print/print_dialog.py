@@ -3,32 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from tkinter import StringVar, DoubleVar, Toplevel
+from tkinter import StringVar, DoubleVar, Toplevel, messagebox
 from tkinter import ttk
 from yt_lib.utils.log_utils import get_logger
 from lib.ui_vars import UiVars, UiDoc
-# from lib.print.layout_types import (
-#     # TextMeasurer,
-#     # TextDrawer,
-#     # PageLayout,
-#     # RenderLine,
-#     # LineItem,
-#     # CenteredLineItem,
-#     # ParagraphItem,
-#     # BlocksItem,
-#     # RenderItem,
-# )
-# from lib.print.layout_engine import (
-#     # wrap_text_words,
-#     # wrap_centered_text,
-#     # blocks_to_lines,
-#     # expand_items_to_lines,
-# )
+from lib.print.constants import COMMON_FONT_SIZES
 from lib.print.print_backend import (
-    COMMON_FONT_SIZES,
-    # create_printer_dc,
     get_default_printer,
-    # PrinterMeasurer,
     get_printer_fonts,
     list_printers,
     print_items,
@@ -138,7 +119,7 @@ class PrintDialog(Toplevel):
         else:
             self.font_var.set(fonts[0])
 
-        self.size_var.set(str(self._default_font_size_pt))
+        self.size_var.set(self._default_font_size_pt)
 
     def on_printer_changed(self, _event=None) -> None:
         """Refresh fonts when the selected printer changes."""
@@ -154,14 +135,19 @@ class PrintDialog(Toplevel):
 
         if not font_name or not font_size:
             return
-
-        print_items(
-            printer_name = printer_name,
-            items = self.ui_doc.get(),
-            document_name = f"Transcript of Youtube video {self.ui_doc.ui.video_id.get()}",
-            face_name = font_name,
-            point_size = font_size,
-        )
+        try:
+            print_items(
+                printer_name = printer_name,
+                items = self.ui_doc.get(),
+                document_name = f"Transcript of Youtube video {self.ui_doc.ui.video_id.get()}",
+                face_name = font_name,
+                point_size = font_size,
+            )
+        except Exception as exc:
+            logger.error(f"Failed to print: %s", exc)
+            messagebox.showerror("Failed to Print", 
+                                 f"Transcript of Youtube video {self.ui_doc.ui.video_id.get()} "
+                                 f"failed to print to {printer_name}.")
         self.destroy()
 
     def on_cancel(self) -> None:

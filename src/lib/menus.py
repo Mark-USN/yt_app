@@ -12,6 +12,7 @@ from lib.app_context import RunContextStore
 from lib.ui_vars import UiVars
 from lib.save import FileSaver
 from lib.print.print_dialog import PrintDialog
+from lib.print.pdf_dialog import PdfDialog
 
 logger = get_logger(__name__)
 
@@ -55,6 +56,7 @@ class MenuCommands:
         self.menubar.add_cascade(menu=self.menu_edit, label="Edit")
 
         self.menu_file.add_command(label="Save...", command=self.save_as)
+        self.menu_file.add_command(label="Save PDF...", command=self.save_as_pdf)
         self.menu_file.add_command(label="Print...", command=self.print)
         self.menu_file.add_separator()
         self.menu_file.add_command(label="Exit", command=self.win.destroy)
@@ -100,6 +102,37 @@ class MenuCommands:
                 self.saver.save_txt(path)
         except OSError as exc:
             messagebox.showerror("Save failed", f"Could not save file {path}:\n{exc}")
+
+    def save_as_pdf(self) -> None:
+        """ Save the transcript to as a pdf to a file. """
+        PdfDialog(self.win, self.ui, self.ctx)
+
+        # ext = 'pdf'
+        # video_id = self.ui.video_id.get().strip()
+        # default_filename = f"{video_id}.{ext}" # if video_id else f"transcript.{ext}"
+
+        # filename = filedialog.asksaveasfilename(
+        #     title="Save As",
+        #     defaultextension=f".{ext}",
+        #     filetypes=[
+        #         ("PDF files", "*.pdf"),
+        #     ],
+        #     initialfile=default_filename,
+        #     initialdir=str(self.ctx.documents_dir),
+        # )
+
+        # if not filename:
+        #     return
+
+        # path = Path(filename)
+
+        # try:
+        #     if path.suffix == ".md":
+        #         self.saver.save_md(path)
+        #     else:
+        #         self.saver.save_txt(path)
+        # except OSError as exc:
+        #     messagebox.showerror("Save failed", f"Could not save file {path}:\n{exc}")
 
     def print(self):
         """ Open the print dialog. """
