@@ -18,7 +18,7 @@ logger = get_logger(__name__)
 #
 ################################################################################
 class FileSaver:
-    """ Logic for saving the transcript and info as a markdown, text, or PDF file. 
+    """ Logic for saving the transcript and info as a markdown or text file. 
         Holds references to the objects needed to create the menu system
         and perform the menu actions.
     """

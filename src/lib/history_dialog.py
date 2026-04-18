@@ -1,4 +1,9 @@
-""" Modal dialog to display history titles in the cache and return the selected URL."""
+""" Modal dialog to display history titles in the cache and return the selected URL.
+    The history is prepended with the video id. The dialog is resizable and will size 
+    itself to fit the longest title, up to a maximum width.
+    The user can select a title and click OK or double-click a title to select it. 
+    The selected URL is returned to the caller, or None if the dialog is cancelled.
+"""
 from __future__ import annotations
 
 from typing import TypedDict

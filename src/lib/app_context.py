@@ -18,6 +18,12 @@ _LOCALE_NAME_MAX_LENGTH = 85
 
 
 def _round_half_up(value: float | Decimal) -> int:
+    """ Round a number to the nearest integer using the "round half up" strategy.
+        Args:
+            value: The number to round, as a float or Decimal.
+        Returns:
+            The rounded integer value.
+    """
     return int(
         Decimal(str(value)).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
     )
@@ -25,7 +31,7 @@ def _round_half_up(value: float | Decimal) -> int:
 
 @dataclass(slots=True, frozen=True)
 class RuntimeContext:
-    """Application runtime context, including platform-specific directories."""
+    """ Application runtime context, including platform-specific directories."""
 
     app_name: str
     app_author: str
@@ -39,7 +45,10 @@ class RuntimeContext:
 
 
 def get_user_posix_locale() -> str:
-    """Return locale like 'en-US' using Windows API."""
+    """ Return locale like 'en-US' using Windows API.
+        Returns:
+            The user's default locale in POSIX format (e.g., 'en-US').
+    """
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
 
     func = kernel32.GetUserDefaultLocaleName
@@ -56,7 +65,12 @@ def get_user_posix_locale() -> str:
 
 
 def detect_locale(default: str = "en_US") -> str:
-    """Detect system locale in a safe, Babel-compatible way."""
+    """ Detect system locale in a safe, Babel-compatible way.
+        Args:
+            default: The default locale to return if detection fails.
+        Returns:
+            The detected locale in a Babel-compatible format, or the default if detection fails.
+    """
     try:
         loc = get_user_posix_locale()
         if not loc:
@@ -106,12 +120,12 @@ class RunContextStore:
 
     @property
     def app_author(self) -> str:
-        """Return the application author."""
+        """ Return the application author."""
         return self.ctx.app_author
 
     @property
     def locale(self) -> str:
-        """Return the application locale."""
+        """ Return the application locale."""
         return self.ctx.locale
 
     @property
@@ -151,7 +165,7 @@ class RunContextStore:
 
     @property
     def documents_dir(self) -> Path:
-        """Return the documents directory."""
+        """ Return the documents directory."""
         path = self.ctx.documents_dir
         path.mkdir(parents=True, exist_ok=True)
         return path
@@ -181,7 +195,7 @@ class RunContextStore:
         return self.transcript_dir() / f"{video_id}.json"
 
     def vid_info_dir(self) -> Path:
-        """Return the video info directory, creating it if necessary."""
+        """ Return the video info directory, creating it if necessary."""
         path = self.cache_dir / "vid_info"
         path.mkdir(parents=True, exist_ok=True)
         return path
@@ -203,12 +217,17 @@ class RunContextStore:
         decimals: int = 2,
         as_int: bool = False,
     ) -> str:
-        """
-        Format a number using Babel with locale awareness.
+        """ Format a number using Babel with locale awareness.
+            Args:
+                value: The number to format, which can be an int, float, Decimal, or None.
+                decimals: The number of decimal places to display (default is 2).
+                as_int: If True, round the number to the nearest integer and display without decimals.
+            Returns:
+                The formatted number as a string.
 
-        - None → ""
-        - decimals → fixed number of decimal places
-        - as_int=True → round (half-up) and display as integer
+            - None → ""
+            - decimals → fixed number of decimal places
+            - as_int=True → round (half-up) and display as integer
         """
 
         if value is None:

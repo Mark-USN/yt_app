@@ -54,6 +54,10 @@ class UiVars:
         them manually when the metadata changes.
         Also, the Text windows are set to disabled by default, so any updates must temporarily
         enable them, update the text, then disable them again to prevent user editing.
+
+        DisplayFields are used for all other metadata, which combine the raw value with formatting
+        and units for display, and can be easily updated by setting their value and calling their
+        render method.
     """
     root: Tk
     ctx: RunContextStore
@@ -290,17 +294,11 @@ class UiVars:
                 self.transcript_txt = f"Unknown format: {self.transcript_type.get()}"
 
         if self.transcript_widget is not None:
-            # if not self.transcript_txt.strip():
-            #     self.transcript_txt = "- Transcript -"
             self.set_text(self.transcript_widget, self.transcript_txt)
-
-
-
 
     # -----------------------------------------------------------------------------
     # Small UI helpers
     # -----------------------------------------------------------------------------
-
 
     def set_text(self,widget: Text, value: str) -> None:
         """ Update disabled Text widgets. 
@@ -321,6 +319,7 @@ class UiDoc:
     """
 
     def __init__(self, ui_vars:UiVars):
+        """ Initialize the document content from the UiVars. """
         self.ui: UiVars = ui_vars
         self.lines: list[RenderItem] = []
         self.lines.append(CenteredLineItem(f"Transcript of Youtube video {self.ui.video_id.get()}"))

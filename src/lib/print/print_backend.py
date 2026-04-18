@@ -1,16 +1,15 @@
-"""
-Windows printer backend for plain-text report rendering.
+""" Windows printer backend for plain-text report rendering.
 
-This module renders shared layout-engine output to a Windows printer using
-pywin32 device contexts.
+    This module renders shared layout-engine output to a Windows printer using
+    pywin32 device contexts.
 
-Library notes
--------------
-The CDC methods used here follow the documented pywin32 API surface for
-printer device contexts, including CreatePrinterDC, GetTextExtent,
-TextOut, GetDeviceCaps, StartDoc, StartPage, EndPage, EndDoc, and
-DeleteDC. Device capabilities are queried using Win32 constants such as
-HORZRES, VERTRES, and LOGPIXELSY. :contentReference[oaicite:1]{index=1}
+    Library notes
+    -------------
+    The CDC methods used here follow the documented pywin32 API surface for
+    printer device contexts, including CreatePrinterDC, GetTextExtent,
+    TextOut, GetDeviceCaps, StartDoc, StartPage, EndPage, EndDoc, and
+    DeleteDC. Device capabilities are queried using Win32 constants such as
+    HORZRES, VERTRES, and LOGPIXELSY. :contentReference[oaicite:1]{index=1}
 """
 
 from __future__ import annotations
@@ -29,105 +28,123 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+# Font type flags (from Wingdi.h)
+RASTER_FONTTYPE = 0x01
+DEVICE_FONTTYPE = 0x02
+TRUETYPE_FONTTYPE = 0x04
+
+
 # pylint: disable=too-few-public-methods, invalid-name
 class PrinterDeviceContext(Protocol):
     """Structural type describing the subset of pywin32 CDC methods used here."""
 
     def GetTextExtent(self, text: str) -> tuple[int, int]:
-        """Return text extent as ``(width, height)`` in device units."""
+        """ Return text extent as ``(width, height)`` in device units.
+            Args:
+                text: The text to measure.
+            Returns:
+                A tuple of (width, height) in device units, typically pixels.
+        """
 
     def TextOut(self, x: int, y: int, text: str) -> None:
-        """Draw text at ``(x, y)``."""
+        """ Draw text at ``(x, y)``.
+            Args:
+                x: The horizontal position in device units.
+                y: The vertical position in device units.
+                text: The text to draw.
+        """
 
     def GetDeviceCaps(self, index: int) -> int:
-        """Return a device capability value."""
+        """ Return a device capability value.
+            Args:
+                index: The capability index, such as HORZRES, VERTRES, LOGPIXELSY, or LOGPIXELSX.
+            Returns:
+                The value of the requested device capability.
+        """
 
     def StartDoc(self, doc_name: str) -> None:
-        """Start a document."""
+        """ Start a document.
+            Args:
+                doc_name: The document name shown to the print subsystem.
+        """
 
     def StartPage(self) -> None:
-        """Start a page."""
+        """ Start a page."""
 
     def EndPage(self) -> None:
-        """Finish the current page."""
+        """ Finish the current page."""
 
     def EndDoc(self) -> None:
-        """Finish the current document."""
+        """ Finish the current document."""
 
     def DeleteDC(self) -> None:
         """Release the device context."""
 
     def CreatePrinterDC(self, printer_name: str) -> None:
-        """Bind the DC to the named printer."""
+        """ Bind the DC to the named printer.
+            Args:
+                printer_name: The name of the printer to use. If empty or "default"
+                (case-insensitive), the default printer will be used.
+        """
 
     def SelectObject(self, obj: object) -> object | None:
-        """Select a GDI object into the DC and return the previous object."""
+        """ Select a GDI object into the DC and return the previous object.
+            Args:
+                obj: The GDI object to select, such as a font created by win32ui.CreateFont.
+            Returns:
+                The previously selected object, or None if no object was previously selected.
+        """
 
 # pylint: disable=too-few-public-methods
 class PrinterMeasurer:
-    """Measure text widths in printer device units."""
+    """ Measure text widths in printer device units."""
 
     def __init__(self, dc: PrinterDeviceContext) -> None:
-        """
-        Initialize the measurer.
-
-        Parameters
-        ----------
-        dc:
-            A printer device context.
+        """ Initialize the measurer.
+            Args:
+                dc: A printer device context.
         """
         self._dc = dc
 
     def measure(self, text: str) -> float:
-        """
-        Return the rendered width of *text* in printer device units.
-
-        Parameters
-        ----------
-        text:
-            The text to measure.
-
-        Returns
-        -------
-        float
-            The width in device units, typically pixels.
+        """ Return the rendered width of *text* in printer device units.
+            Args:
+                text: The text to measure.
+            Returns:
+                The width in device units, typically pixels.
         """
         width, _height = self._dc.GetTextExtent(text)
         return float(width)
 
 # pylint: disable=too-few-public-methods
 class PrinterDrawer:
-    """Draw text to a printer device context."""
+    """ Draw text to a printer device context."""
 
     def __init__(self, dc: PrinterDeviceContext) -> None:
-        """
-        Initialize the drawer.
-
-        Parameters
-        ----------
-        dc:
-            A printer device context.
+        """ Initialize the drawer.
+            Args:
+                dc: A printer device context.
         """
         self._dc = dc
 
     def draw_text(self, x: float, y: float, text: str) -> None:
-        """
-        Draw *text* at ``(x, y)``.
-
-        Parameters
-        ----------
-        x:
-            Horizontal position in device units.
-        y:
-            Vertical position in device units.
-        text:
-            The text to draw.
+        """ Draw *text* at ``(x, y)``.
+            Args:
+                x: Horizontal position in device units, typically pixels.
+                y: Vertical position in device units, typically pixels.
+                text: The text to draw.
         """
         self._dc.TextOut(int(round(x)), int(round(y)), text)
 
 
 def create_printer_dc(printer_name: str) -> win32ui.CDC:
-    """ Create and return a printer device context for the given printer name."""
+    """ Create and return a printer device context for the given printer name.
+        Args:
+            printer_name: The name of the printer to create a DC for. If empty or "default"
+            (case-insensitive), the default printer will be used.
+        Returns:
+            A printer device context for the specified printer.
+    """
     dc = win32ui.CreateDC()                                     # pylint: disable=c-extension-no-member
     if printer_name is None or printer_name.strip().lower() == "default":
         printer_name = win32print.GetDefaultPrinter()           # pylint: disable=c-extension-no-member
@@ -135,12 +152,18 @@ def create_printer_dc(printer_name: str) -> win32ui.CDC:
     return dc
 
 def get_default_printer() -> str:
-    """Return the name of the default printer."""
+    """ Return the name of the default printer.
+        Returns:
+            The default printer name as recognized by the Win32 API.
+    """
     return win32print.GetDefaultPrinter()                       # pylint: disable=c-extension-no-member
 
 
 def list_printers() -> list[str]:
-    """Return a list of available printer names."""
+    """ Return a list of available printer names.
+        Returns:
+            A list of printer names available on the system, including local and network printers.
+    """
     # pylint: disable=c-extension-no-member
     printers = win32print.EnumPrinters(
         win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS
@@ -148,20 +171,18 @@ def list_printers() -> list[str]:
     return [p[2] for p in printers]
 
 
-# Font type flags (from Wingdi.h)
-RASTER_FONTTYPE = 0x01
-DEVICE_FONTTYPE = 0x02
-TRUETYPE_FONTTYPE = 0x04
-
-
 def list_fonts(dc: win32ui.CDC) -> list[str]:
-    """Return sorted unique font face names usable for printing.
+    """ Return sorted unique font face names usable for printing.
+        Args:
+            dc: A printer device context to query fonts from.
+        Returns:
+            A sorted list of font face names that are usable for printing.
 
-    Includes:
-        - TrueType fonts
-        - Device (printer-resident) fonts
-    Excludes:
-        - Raster fonts
+        Includes:
+            - TrueType fonts
+            - Device (printer-resident) fonts
+        Excludes:
+            - Raster fonts
     """
     fonts: set[str] = set()
 
@@ -205,29 +226,19 @@ def create_printer_font(
     point_size: float,
     weight: int = win32con.FW_NORMAL,       # pylint: disable=c-extension-no-member
 ) -> object:
-    """
-    Create a printer font sized for the target device context.
+    """ Create a printer font sized for the target device context.
+        Args:
+            dc: A printer device context to create the font for.
+            face_name: The requested font face name.
+            point_size: The requested font size in typographic points.
+            weight: The Win32 font weight, defaulting to ``FW_NORMAL``.
+        Returns:
+            A pywin32 font object suitable for ``dc.SelectObject(...)``.
 
-    Parameters
-    ----------
-    dc:
-        The printer device context.
-    face_name:
-        The font face name, such as ``"Arial"``.
-    point_size:
-        The requested font size in typographic points.
-    weight:
-        The Win32 font weight, defaulting to ``FW_NORMAL``.
-
-    Returns
-    -------
-    object
-        A pywin32 font object suitable for ``dc.SelectObject(...)``.
-
-    Notes
-    -----
-    Win32 font heights are commonly specified in logical units. A negative
-    height requests a character height corresponding to the given point size.
+        Notes
+        -----
+        Win32 font heights are commonly specified in logical units. A negative
+        height requests a character height corresponding to the given point size.
     """
     dpi_y = dc.GetDeviceCaps(win32con.LOGPIXELSY)   # pylint: disable=c-extension-no-member
     height = -round(point_size * dpi_y / 72.0)
@@ -250,26 +261,15 @@ def get_printer_layout(
     line_spacing: float = 1.25,
     wrap_indent_inches: float = 0.25,
 ) -> PageLayout:
-    """
-    Build a page layout for the active printer.
-
-    Parameters
-    ----------
-    dc:
-        The printer device context.
-    point_size:
-        The font size in points used for line-height estimation.
-    margin_inches:
-        Margin size in inches on all sides.
-    line_spacing:
-        Multiplier applied to the nominal font height.
-    wrap_indent_inches:
-        Indentation used for continuation lines, in inches.
-
-    Returns
-    -------
-    PageLayout
-        The computed printer page layout.
+    """ Build a page layout for the active printer.
+        Args:
+            dc: A printer device context to query for page dimensions and DPI.
+            point_size: The font size in points used for line-height estimation.
+            margin_inches: Margin size in inches on all sides.
+            line_spacing: Multiplier applied to the nominal font height.
+            wrap_indent_inches: Indentation used for continuation lines, in inches.
+        Returns:
+            A PageLayout object representing the computed printer page layout.
     """
     page_width = float(dc.GetDeviceCaps(win32con.HORZRES))  # pylint: disable=c-extension-no-member
     page_height = float(dc.GetDeviceCaps(win32con.VERTRES)) # pylint: disable=c-extension-no-member
@@ -298,20 +298,12 @@ def _paginate_printer_lines(
     *,
     layout: PageLayout,
 ) -> list[list[RenderLine]]:
-    """
-    Split rendered lines into printer pages.
-
-    Parameters
-    ----------
-    lines:
-        The fully laid-out lines to paginate.
-    layout:
-        The page layout.
-
-    Returns
-    -------
-    list[list[RenderLine]]
-        A list of pages, where each page is a list of rendered lines.
+    """ Split rendered lines into printer pages.
+        Args:
+            lines: The rendered lines to paginate.
+            layout: The page layout.
+        Returns:
+            A list of pages, where each page is a list of rendered lines.
     """
     pages: list[list[RenderLine]] = []
     current_page: list[RenderLine] = []
@@ -338,17 +330,11 @@ def _render_printer_page(
     drawer: TextDrawer,
     layout: PageLayout,
 ) -> None:
-    """
-    Render one page of lines to the printer.
-
-    Parameters
-    ----------
-    lines:
-        The page's rendered lines.
-    drawer:
-        The text drawer.
-    layout:
-        The page layout.
+    """ Render one page of lines to the printer.
+        Args:
+            lines: The lines to render on the page.
+            drawer: The text drawer.
+            layout: The page layout.
     """
     y = layout.top_y
     for line in lines:
@@ -365,21 +351,14 @@ def print_items(
     face_name: str = "Arial",
     point_size: float = 10.0,
 ) -> None:
-    """
-    Render mixed content items to a Windows printer.
-
-    Parameters
-    ----------
-    printer_name:
-        Name of the target printer.
-    items:
-        Mixed layout items to render.
-    document_name:
-        Document title shown to the print subsystem.
-    face_name:
-        Requested font face name.
-    point_size:
-        Requested font size in points.
+    """ Render mixed content items to a Windows printer.
+        Args:
+            printer_name: The name of the printer to print to. If empty or "default",
+                            the default printer is used.
+            items: The mixed layout items to render.
+            document_name: The document title shown to the print subsystem.
+            face_name: The requested font face name.
+            point_size: The requested font size in points.
     """
     dc = win32ui.CreateDC()             # pylint: disable=c-extension-no-member
     dc.CreatePrinterDC(printer_name)    # pylint: disable=c-extension-no-member

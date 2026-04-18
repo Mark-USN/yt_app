@@ -3,14 +3,15 @@ Simple Tkinter app to fetch and view YouTube transcripts from local cache,
 and display metadata + transcript in a GUI.
 
 - Uses an InfoManager cache for URL history + metadata.
-- Uses yt_lib transcript helpers for output formats.
+- Uses yt_lib transcript to retrieve YouTube transcripts in the event of cache misses.
 - Keeps main() streamlined by using a small "view-model" dataclass (UiVars)
-  that owns Tk variables and knows how to apply metadata to them.
+  that owns Tk variables and knows how to apply metadata to them and modules to implement
+  different parts of the UI.
 """
 
 from __future__ import annotations
 
-from tkinter import Tk, Text # , StringVar, IntVar, DoubleVar, Menu, filedialog, messagebox
+from tkinter import Tk, Text
 from tkinter import ttk
 from yt_lib.utils.log_utils import configure_logging, LogConfig, FileLogConfig, get_logger
 from lib.app_context import create_runtime_context, RunContextStore
@@ -64,7 +65,7 @@ def main() -> None:
     root.minsize(900, 500)
 
     ui_vars = UiVars(root=root, ctx=ctx_store, cache=cache)
-    # menu = MenuCommands(root=root, ctx=ctx_store, ui=ui_vars)
+
     MenuCommands(root=root, ctx=ctx_store, ui=ui_vars)
 
     # frame['padding'] = (left, top, right, bottom)
@@ -97,16 +98,24 @@ def main() -> None:
     cmbo_url = ttk.Combobox(url_frame, textvariable=ui_vars.combo_url)
     cmbo_url.grid(column=1, row=0, sticky="ew", padx=(6, 0))
 
+    # Populate the URL dropdown with cached URLs. This is done here at setup, and also
+    # after any URL selection or change, to ensure it stays up to date with the cache.
     choices = cache.get_cached_urls()
     cmbo_url["values"] = choices
 
     # --- Info frame ---
+    # Holds information about the currently selected video/transcript, and updates
+    # when the URL changes.
     info_frame = ttk.Frame(top_frame, padding=(6, 6, 12, 12), borderwidth=1, relief="ridge")
     info_frame.grid(column=0, row=1, sticky="nsew", padx=6, pady=(0, 6))
 
     for c in range(4):
         info_frame.columnconfigure(c, weight=1)
-
+    # Uses the DisplayField class which combines the field's label, value, and formatting logic
+    # into a single object that can be easily displayed in the UI. Each field is bound to a 
+    # StringVar that updates automatically when the field's value changes.
+    # The info frame is organized into rows and columns to display the video metadata in a clear
+    # and structured way.
     ttk.Label(info_frame, textvariable=ui_vars.title.var).grid(column=0,
                     row=0, columnspan=4, sticky="w")
     ttk.Label(info_frame, textvariable=ui_vars.url.var).grid(column=0,
@@ -124,6 +133,8 @@ def main() -> None:
     ttk.Label(info_frame, textvariable=ui_vars.bit_rate.var).grid(column=3, row=4, sticky="w")
 
     # --- Options frame on the right of URL + info ---
+    # This frame holds controls for interacting with the app, like opening the history dialog and
+    # selecting the transcript format.
     option_frame = ttk.Frame(top_frame, padding=(6, 6, 12, 12), borderwidth=1, relief="ridge")
     # pady(0, 6) aligns the bottom of this frame with the bottom of the info frame, and the top
     # with the top of the URL frame
@@ -168,7 +179,9 @@ def main() -> None:
 
 
     # -------------------------------------------------------------------------
-    # Description
+    # Description: shows the video description metadata, which is often useful 
+    #   context for understanding the transcript. It is freeform and can
+    #   contain nothing, or a lot of text, so it is in a scrollable Text widget.
     # -------------------------------------------------------------------------
     desc_frame = ttk.LabelFrame(main_frame, padding=(6, 6, 12, 12), text="Description")
     desc_frame.grid(column=0, row=1, sticky="nsew", padx=6, pady=(0, 6))
@@ -184,7 +197,10 @@ def main() -> None:
     ui_vars.set_desc_widget(txt_dscr)
 
     # -------------------------------------------------------------------------
-    # Transcript
+    # Transcript: shows the transcript text in a scrollable Text widget. 
+    #   The content and formatting of the transcript are selectable via the 
+    #   "Transcript type" radio buttons, which update the transcript_type field
+    #   in the info section and trigger a reload of the transcript content.
     # -------------------------------------------------------------------------
     out_frame = ttk.LabelFrame(main_frame, padding=(6, 6, 12, 12), text="Transcript")
     out_frame.grid(column=0, row=2, sticky="nsew", padx=6, pady=(0, 6))
@@ -202,6 +218,7 @@ def main() -> None:
     ui_vars.clear()
 
     def do_populate() -> None:
+        """ Small helper to repopulate the UI upon a change in the URL or transcript type. """
         ui_vars.ui_change()
         cmbo_url["values"] = cache.get_cached_urls()
 
@@ -210,6 +227,11 @@ def main() -> None:
     cmbo_url.bind("<FocusOut>", lambda _e: do_populate())
 
     def on_format_change(*_args: object) -> None:
+        """ Update the transcript type in the info section and reload the transcript when
+            the transcript format radio buttons change. 
+            Args:
+                *_args: Required by the trace_add callback signature, but not used.
+        """
         if is_valid_youtube_url(cmbo_url.get()):
             do_populate()
         else:

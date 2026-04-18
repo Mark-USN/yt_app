@@ -1,14 +1,13 @@
-"""
-ReportLab PDF backend for plain-text report rendering.
+""" ReportLab PDF backend for plain-text report rendering.
 
-This module renders shared layout-engine output to a PDF file using
-ReportLab.
+    This module renders shared layout-engine output to a PDF file using
+    ReportLab.
 
-Library notes
--------------
-ReportLab's canvas supports drawing text with ``drawString``, and text
-width can be measured with ``pdfmetrics.stringWidth``. Those are the APIs
-used here. :contentReference[oaicite:2]{index=2}
+    Library notes
+    -------------
+    ReportLab's canvas supports drawing text with ``drawString``, and text
+    width can be measured with ``pdfmetrics.stringWidth``. Those are the APIs
+    used here. :contentReference[oaicite:2]{index=2}
 """
 
 from __future__ import annotations
@@ -42,69 +41,46 @@ PDF_FONT_NAMES: list[str] = [
 
 # pylint: disable=too-few-public-methods
 class PdfMeasurer:
-    """Measure text widths in PDF points."""
+    """ Measure text widths in PDF points."""
 
     def __init__(self, font_name: str, font_size: float) -> None:
-        """
-        Initialize the measurer.
-
-        Parameters
-        ----------
-        font_name:
-            ReportLab font name.
-        font_size:
-            Font size in points.
+        """ Initialize the measurer.
+            Args:
+                font_name: ReportLab font name.
+                font_size: Font size in points.
         """
         self._font_name = font_name
         self._font_size = font_size
 
     def measure(self, text: str) -> float:
-        """
-        Return the rendered width of *text* in points.
-
-        Parameters
-        ----------
-        text:
-            The text to measure.
-
-        Returns
-        -------
-        float
-            The width in PDF points.
+        """ Return the rendered width of *text* in points.
+            Args:
+                text: The text to measure.
+            Returns:
+                The width in PDF points.
         """
         return float(stringWidth(text, self._font_name, self._font_size))
 
 
 # pylint: disable=too-few-public-methods
 class PdfDrawer:
-    """Draw text to a ReportLab canvas."""
+    """ Draw text to a ReportLab canvas."""
 
     def __init__(self, canvas: Canvas) -> None:
-        """
-        Initialize the drawer.
-
-        Parameters
-        ----------
-        canvas:
-            The ReportLab canvas used for drawing.
+        """ Initialize the drawer.
+            Args:
+                canvas: The ReportLab canvas used for drawing.
         """
         self._canvas = canvas
 
     def draw_text(self, x: float, y: float, text: str) -> None:
-        """
-        Draw *text* at ``(x, y)``.
-
-        Parameters
-        ----------
-        x:
-            Horizontal position in points.
-        y:
-            Vertical position in points.
-        text:
-            The text to draw.
+        """ Draw *text* at ``(x, y)``.
+            Args:
+                x: Horizontal position in points.
+                y: Vertical position in points.
+                text: The text to draw.
         """
         self._canvas.drawString(x, y, text)
-
 
 def get_pdf_layout(
     *,
@@ -115,33 +91,21 @@ def get_pdf_layout(
     line_spacing: float = 1.25,
     wrap_indent_points: float = 18.0,
 ) -> PageLayout:
-    """
-    Build a page layout for PDF output.
+    """ Build a page layout for PDF output.
+        Args:
+            page_width: Page width in points.
+            page_height: Page height in points.
+            font_size: The active font size in points.
+            margin_points: Margin size in points on all sides.
+            line_spacing: Multiplier applied to the font size for line spacing.
+            wrap_indent_points: Indentation used for continuation lines, in points.
+        Returns:
+            PageLayout: The computed PDF page layout.
 
-    Parameters
-    ----------
-    page_width:
-        Page width in points.
-    page_height:
-        Page height in points.
-    font_size:
-        The active font size in points.
-    margin_points:
-        Margin size in points on all sides.
-    line_spacing:
-        Multiplier applied to the font size for line spacing.
-    wrap_indent_points:
-        Indentation used for continuation lines, in points.
-
-    Returns
-    -------
-    PageLayout
-        The computed PDF page layout.
-
-    Notes
-    -----
-    ReportLab uses a bottom-left origin. To move downward on the page,
-    subsequent lines use decreasing ``y`` values.
+        Notes
+        -----
+        ReportLab uses a bottom-left origin. To move downward on the page,
+        subsequent lines use decreasing ``y`` values.
     """
     return PageLayout(
         page_width=page_width,
@@ -160,20 +124,12 @@ def _paginate_pdf_lines(
     *,
     layout: PageLayout,
 ) -> list[list[RenderLine]]:
-    """
-    Split rendered lines into PDF pages.
-
-    Parameters
-    ----------
-    lines:
-        The fully laid-out lines to paginate.
-    layout:
-        The page layout.
-
-    Returns
-    -------
-    list[list[RenderLine]]
-        A list of pages, where each page is a list of rendered lines.
+    """ Split rendered lines into PDF pages.
+        Args:
+            lines: The rendered lines to paginate.
+            layout: The page layout used for pagination.
+        Returns:
+            A list of pages, where each page is a list of RenderLine objects.
     """
     pages: list[list[RenderLine]] = []
     current_page: list[RenderLine] = []
@@ -200,17 +156,11 @@ def _render_pdf_page(
     drawer: TextDrawer,
     layout: PageLayout,
 ) -> None:
-    """
-    Render one page of lines to a PDF canvas.
-
-    Parameters
-    ----------
-    lines:
-        The page's rendered lines.
-    drawer:
-        The text drawer.
-    layout:
-        The page layout.
+    """ Render one page of lines to a PDF canvas.
+        Args:
+            lines: The lines to render on the page.
+            drawer: The TextDrawer used for drawing text.
+            layout: The PageLayout used for positioning text.
     """
     y = layout.top_y
     for line in lines:
@@ -228,23 +178,15 @@ def write_pdf(
     font_size: float = 10.0,
     title: str = "Report",
 ) -> None:
-    """
-    Render mixed content items to a PDF file.
+    """ Render mixed content items to a PDF file.
 
-    Parameters
-    ----------
-    pdf_path:
-        Destination path for the generated PDF.
-    items:
-        Mixed layout items to render.
-    pagesize:
-        ReportLab page size tuple in points.
-    font_name:
-        ReportLab font name.
-    font_size:
-        Font size in points.
-    title:
-        Document title metadata.
+        Args:
+            pdf_path: Destination path for the generated PDF.
+            items: Mixed layout items to render.
+            pagesize: ReportLab page size tuple in points.
+            font_name: ReportLab font name.
+            font_size: Font size in points.
+            title: Document title metadata.
     """
     output_path = Path(pdf_path)
     page_width, page_height = pagesize

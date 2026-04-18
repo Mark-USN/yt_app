@@ -46,17 +46,26 @@ class DisplayField:
     _value: float | int | str | None = field(default=None, init=False, repr=False)
 
     def set(self, value: float | int | str | None) -> None:
-        """ Set the underlying value of the field and update the StringVar if it exists. """
+        """ Set the underlying value of the field and update the StringVar if it exists. 
+            Args:
+                value: The new value to set for the field. Can be a float, int, or str.
+        """
         self._value = value
         if self.var is not None:
             self.var.set(self.render())
 
     def get(self) -> float | int | str | None:
-        """ Get the underlying value of the field. """
+        """ Get the underlying value of the field. 
+            Returns:
+                The raw value of the field, which can be a float, int, str, or None.
+        """                
         return self._value
 
     def render(self) -> str:
-        """ Render the field's value as a string for display. """
+        """ Render the field's value as a string for display. 
+            Returns:
+                A string representing the formatted value of the field.
+        """
         if self._value is None:
             value_text = ""
         elif isinstance(self._value, float):
@@ -86,7 +95,12 @@ class DisplayField:
 
     @classmethod
     def from_dict(cls, data: DisplayFieldData) -> DisplayField:
-        """ Create a DisplayField from a dictionary of data. """
+        """ Create a DisplayField from a dictionary of data. 
+            Args:
+                data: A dictionary containing the necessary information to create a DisplayField.
+            Returns:
+                A DisplayField instance initialized with the provided data.
+        """
         return cls(
             ctx=data["ctx"],
             label=data["label"],
@@ -128,12 +142,18 @@ class DurationField(DisplayField):
     """ A specialized DisplayField for formatting durations in seconds into H:MM:SS format. """
 
     def get(self) -> float | None:
-        """ Get the underlying value of the field as a float representing seconds. """
+        """ Get the underlying value of the field as a float representing seconds. 
+            Returns:
+                The duration in seconds as a float, or None if the value is not set.
+        """
         value = self._value
         return float(value) if value is not None else None
 
     def render(self) -> str:
-        """ Render the field's value as a formatted duration string. """
+        """ Render the field's value as a formatted duration string. 
+            Returns:
+                A string representing the formatted duration.
+        """
         value = self.get()
         dur_str:str = format_hms(value)
         return f"{self.label}{self.sep}{dur_str}"
@@ -147,12 +167,18 @@ class FileSizeField(DisplayField):
     """
 
     def get(self) -> int | None:
-        """ Get the underlying value of the field as an integer representing bytes. """
+        """ Get the underlying value of the field as an integer representing bytes. 
+            Returns:
+                The file size in bytes as an integer, or None if the value is not set.
+        """
         value = self._value
         return int(value) if value is not None else None
 
     def render(self) -> str:
-        """ Render the field's value as a formatted file size string with appropriate units. """
+        """ Render the field's value as a formatted file size string with appropriate units.
+            Returns:
+                A string representing the formatted file size, including units (bytes, KB, or MB).
+        """
         size = self.get()
         kb = 1024
         mb = kb * 1024

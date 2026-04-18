@@ -1,4 +1,4 @@
-"""Dialog for selecting PDF font, size, and output filename before saving."""
+""" Dialog for selecting PDF font, size, and output filename before saving."""
 
 from __future__ import annotations
 
@@ -12,29 +12,11 @@ from reportlab.lib.pagesizes import letter
 from lib.ui_vars import UiVars, UiDoc
 from lib.app_context import RunContextStore
 from lib.print.constants import COMMON_FONT_SIZES
-from lib.print.pdf_backend import write_pdf
-
-PDF_FONT_NAMES: list[str] = [
-    "Courier",
-    "Courier-Bold",
-    "Courier-BoldOblique",
-    "Courier-Oblique",
-    "Helvetica",
-    "Helvetica-Bold",
-    "Helvetica-BoldOblique",
-    "Helvetica-Oblique",
-    "Symbol",
-    "Times-Bold",
-    "Times-BoldItalic",
-    "Times-Italic",
-    "Times-Roman",
-    "ZapfDingbats",
-]
-
+from lib.print.pdf_backend import write_pdf, PDF_FONT_NAMES
 
 @dataclass(slots=True, frozen=True)
 class PdfSettings:
-    """Selected settings for PDF export."""
+    """ Selected settings for PDF export."""
 
     font_name: str
     font_size_pt: float
@@ -42,7 +24,7 @@ class PdfSettings:
 
 
 class PdfDialog(Toplevel):
-    """Modal dialog for choosing PDF font, size, and output filename."""
+    """ Modal dialog for choosing PDF font, size, and output filename."""
 
     def __init__(
         self,
@@ -53,6 +35,14 @@ class PdfDialog(Toplevel):
         default_font_name: str = "Helvetica",
         default_font_size_pt: float = 10.0,
     ) -> None:
+        """ Initialize the dialog.
+            Args:
+                parent: The parent Tkinter widget.
+                ui_vars: The UI variables containing the transcript data.
+                ctx: The application context for accessing directories.
+                default_font_name: The default font name to select.
+                default_font_size_pt: The default font size in points to select.
+        """
         super().__init__(parent)
         self.ctx = ctx
         self.title("Save PDF")
@@ -136,14 +126,17 @@ class PdfDialog(Toplevel):
         self.focus_set()
 
     def _build_default_filename(self) -> str:
-        """Return a reasonable default PDF filename."""
+        """ Return a reasonable default PDF filename.
+            Returns:
+                A default filename based on the video ID, or "report.pdf" if no ID is
+        """
         video_id = self.ui_doc.ui.video_id.get().strip()
         if video_id:
             return f"{video_id}.pdf"
         return "report.pdf"
 
     def on_browse(self) -> None:
-        """Open the save-as dialog and store the selected filename."""
+        """ Open the save-as dialog and store the selected filename."""
         current_name = self.filename_var.get().strip() or self._build_default_filename()
 
         pdf_path = filedialog.asksaveasfilename(
@@ -177,7 +170,7 @@ class PdfDialog(Toplevel):
 
 
     def on_save(self) -> None:
-        """Save the PDF if the dialog has a valid filename to the user's documents directory."""
+        """ Save the PDF if the dialog has a valid filename to the user's documents directory."""
         font_name = self.font_var.get().strip()
         font_size = float(self.size_var.get())
         filename = self.filename_var.get().strip()
@@ -202,10 +195,13 @@ class PdfDialog(Toplevel):
                 pdf_path=pdf_path,
             )
             self.destroy()
-        messagebox.showerror("Save failed", f"File exists!\nUse the Browse button to move, rename, or overwrite the file.")
+        messagebox.showerror("Save failed",
+                        "File exists!\nUse the Browse button to move, rename, "
+                        "or overwrite the file."
+                    )
 
 
     def on_cancel(self) -> None:
-        """Cancel the dialog."""
+        """ Cancel the dialog."""
         self.result = None
         self.destroy()

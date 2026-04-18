@@ -34,8 +34,15 @@ class PrintDialog(Toplevel):
         *,
         default_font_name: str = "Courier New",
         default_font_size_pt: float = 10.0,
-        # doc_title: str = "Report",
     ) -> None:
+        """ Initialize the dialog.
+            Args:
+                parent: The parent Tkinter widget.
+                ui_vars: The UI variables containing the transcript data.
+                default_font_name: The default font to select if available.
+                default_font_size_pt: The default font size in points.
+                doc_title: The title to use for the printed document.
+        """
         super().__init__(parent)
 
         self.title("Print")
@@ -91,7 +98,7 @@ class PrintDialog(Toplevel):
         self.focus_set()
 
     def _populate_printers(self) -> None:
-        """Load installed printers and select a default."""
+        """ Load installed printers and select a default."""
         printers = list_printers()
         self.printer_combo["values"] = printers
 
@@ -104,7 +111,10 @@ class PrintDialog(Toplevel):
         self._populate_fonts(selected)
 
     def _populate_fonts(self, printer_name: str) -> None:
-        """Load fonts for the selected printer."""
+        """ Load fonts for the selected printer.
+            Args:
+                printer_name: The name of the selected printer.
+        """
 
         fonts = get_printer_fonts(printer_name.strip())
 
@@ -128,7 +138,7 @@ class PrintDialog(Toplevel):
             self._populate_fonts(printer_name)
 
     def on_print(self) -> None:
-        """Store the selected settings and close the dialog."""
+        """ Print the document using the selected settings and close the dialog."""
         printer_name = self.printer_var.get().strip()
         font_name = self.font_var.get().strip()
         font_size = self.size_var.get()
@@ -144,13 +154,13 @@ class PrintDialog(Toplevel):
                 point_size = font_size,
             )
         except Exception as exc:
-            logger.error(f"Failed to print: %s", exc)
-            messagebox.showerror("Failed to Print", 
-                                 f"Transcript of Youtube video {self.ui_doc.ui.video_id.get()} "
+            logger.error("Failed to print: %s", exc)
+            messagebox.showerror("Failed to Print",
+                                 f"Transcript of YouTube video {self.ui_doc.ui.video_id.get()} "
                                  f"failed to print to {printer_name}.")
         self.destroy()
 
     def on_cancel(self) -> None:
-        """Cancel the dialog."""
+        """ Cancel the dialog."""
         self.result = None
         self.destroy()
