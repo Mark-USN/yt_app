@@ -5,7 +5,8 @@
 from __future__ import annotations
 
 from urllib.parse import urlparse
-from tkinter import Tk, StringVar, Text # , Toplevel, filedialog, messagebox
+import tkinter as tk
+from tkinter import StringVar, Text 
 from yt_lib.yt_ids import extract_video_id
 from yt_lib.yt_transcript import youtube_json # , youtube_text, youtube_sentences
 from yt_lib.ytdlp_info import YtdlpInfo
@@ -59,7 +60,7 @@ class UiVars:
         and units for display, and can be easily updated by setting their value and calling their
         render method.
     """
-    root: Tk
+    root: tk
     ctx: RunContextStore
     cache: InfoManager
     combo_url: StringVar
@@ -85,7 +86,7 @@ class UiVars:
 
     def __init__(
             self,
-            root: Tk,
+            root: tk.Misc,
             ctx: RunContextStore,
             cache: InfoManager,
         ) -> None:

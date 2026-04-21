@@ -13,6 +13,7 @@ dependencies = [
     "reportlab>=4.4.10",
     "pywin32>=311",
     "pdoc>=16.0.0",
+    "flake8-spellcheck>=0.28.0",
 ]
 
 [tool.uv.sources]

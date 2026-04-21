@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from tkinter import StringVar, DoubleVar, Toplevel, messagebox
-from tkinter import ttk
+from tkinter import ttk, StringVar, DoubleVar, Toplevel, messagebox
 from yt_lib.utils.log_utils import get_logger
 from lib.ui_vars import UiVars, UiDoc
 from lib.print.constants import COMMON_FONT_SIZES

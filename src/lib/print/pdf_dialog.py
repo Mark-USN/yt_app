@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from tkinter import StringVar, DoubleVar, Toplevel, filedialog, messagebox
-from tkinter import ttk
+from tkinter import ttk, StringVar, DoubleVar, Toplevel, filedialog, messagebox
 
 from reportlab.lib.pagesizes import letter
 

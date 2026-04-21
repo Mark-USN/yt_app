@@ -7,9 +7,8 @@
 from __future__ import annotations
 
 from typing import TypedDict
-from tkinter import font
-from tkinter import Tk, Toplevel, Listbox, Event, Misc, END
-from tkinter import ttk
+import tkinter as tk
+from tkinter import ttk, Toplevel, Listbox, Event, Misc, font, END
 from yt_lib.utils.log_utils import get_logger
 
 logger = get_logger(__name__)
@@ -29,7 +28,7 @@ class HistoryDialog(Toplevel):
     url: str | None
     def __init__(
         self,
-        parent: Tk.Misc,
+        parent: tk.Misc,
         items: list[dict[str, str]],
         *,
         title: str = "History",

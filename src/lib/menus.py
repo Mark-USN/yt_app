@@ -6,7 +6,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from tkinter import Tk, Menu, filedialog, messagebox    # , Toplevel, StringVar, IntVar, Text
+import tkinter as tk
+from tkinter import Menu, filedialog, messagebox    
 from yt_lib.utils.log_utils import get_logger
 from lib.app_context import RunContextStore
 from lib.ui_vars import UiVars
@@ -28,7 +29,7 @@ class MenuCommands:
     """
     def __init__(
         self,
-        root: Tk,
+        root: tk.Misc,
         ctx: RunContextStore,
         ui: UiVars,
     ) -> None:

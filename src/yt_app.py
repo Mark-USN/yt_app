@@ -11,8 +11,8 @@ and display metadata + transcript in a GUI.
 
 from __future__ import annotations
 
-from tkinter import Tk, Text
-from tkinter import ttk
+import tkinter as tk
+from tkinter import ttk, Text
 from yt_lib.utils.log_utils import configure_logging, LogConfig, FileLogConfig, get_logger
 from lib.app_context import create_runtime_context, RunContextStore
 from lib.info_cache import InfoManager
@@ -59,7 +59,7 @@ def main() -> None:
     """Set up the GUI, load initial data, and bind events."""
 
     cache = InfoManager(ctx_store)
-    root = Tk()
+    root = tk.Misc
     root.title("yt_app")
     root.geometry("1100x700")
     root.minsize(900, 500)

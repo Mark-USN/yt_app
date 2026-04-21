@@ -137,7 +137,7 @@ class PrinterDrawer:
         self._dc.TextOut(int(round(x)), int(round(y)), text)
 
 
-def create_printer_dc(printer_name: str) -> win32ui.CDC:
+def create_printer_dc(printer_name: str) -> PrinterDeviceContext:
     """ Create and return a printer device context for the given printer name.
         Args:
             printer_name: The name of the printer to create a DC for. If empty or "default"
@@ -171,7 +171,7 @@ def list_printers() -> list[str]:
     return [p[2] for p in printers]
 
 
-def list_fonts(dc: win32ui.CDC) -> list[str]:
+def list_fonts(dc: PrinterDeviceContext) -> list[str]:
     """ Return sorted unique font face names usable for printing.
         Args:
             dc: A printer device context to query fonts from.
