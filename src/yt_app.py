@@ -59,7 +59,7 @@ def main() -> None:
     """Set up the GUI, load initial data, and bind events."""
 
     cache = InfoManager(ctx_store)
-    root = tk.Misc
+    root = tk.Tk()
     root.title("yt_app")
     root.geometry("1100x700")
     root.minsize(900, 500)
