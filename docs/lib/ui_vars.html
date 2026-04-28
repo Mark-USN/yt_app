@@ -184,7 +184,7 @@ apply metadata to them.</p>
 </span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">yt_lib.yt_transcript</span><span class="w"> </span><span class="kn">import</span> <span class="n">youtube_json</span> <span class="c1"># , youtube_text, youtube_sentences</span>
 </span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">yt_lib.ytdlp_info</span><span class="w"> </span><span class="kn">import</span> <span class="n">YtdlpInfo</span>
 </span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">yt_lib.utils.log_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">lib.app_context</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunContextStore</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">yt_lib.utils.app_context</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunContextStore</span>
 </span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">lib.info_cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">InfoManager</span>
 </span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">lib.format_transcript</span><span class="w"> </span><span class="kn">import</span> <span class="n">json_to_sentences</span><span class="p">,</span> <span class="n">json_to_text</span><span class="p">,</span> <span class="n">convert_json</span>
 </span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">lib.display_field</span><span class="w"> </span><span class="kn">import</span> <span class="n">DisplayField</span><span class="p">,</span> <span class="n">DurationField</span><span class="p">,</span> <span class="n">FileSizeField</span>
@@ -881,7 +881,7 @@ render method.</p>
                                         <input id="UiVars.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
-        <span class="name">UiVars</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">root</span><span class="p">:</span> <span class="n">tkinter</span><span class="o">.</span><span class="n">Misc</span>,</span><span class="param">	<span class="n">ctx</span><span class="p">:</span> <span class="n"><a href="app_context.html#RunContextStore">lib.app_context.RunContextStore</a></span>,</span><span class="param">	<span class="n">cache</span><span class="p">:</span> <span class="n"><a href="info_cache.html#InfoManager">lib.info_cache.InfoManager</a></span></span>)</span>
+        <span class="name">UiVars</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">root</span><span class="p">:</span> <span class="n">tkinter</span><span class="o">.</span><span class="n">Misc</span>,</span><span class="param">	<span class="n">ctx</span><span class="p">:</span> <span class="n">yt_lib</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">app_context</span><span class="o">.</span><span class="n">RunContextStore</span>,</span><span class="param">	<span class="n">cache</span><span class="p">:</span> <span class="n"><a href="info_cache.html#InfoManager">lib.info_cache.InfoManager</a></span></span>)</span>
 
                 <label class="view-source-button" for="UiVars.__init__-view-source"><span>View Source</span></label>
 
@@ -1019,7 +1019,7 @@ Args:
                             </div>
                             <div id="UiVars.ctx" class="classattr">
                                 <div class="attr variable">
-            <span class="name">ctx</span><span class="annotation">: <a href="app_context.html#RunContextStore">lib.app_context.RunContextStore</a></span>
+            <span class="name">ctx</span><span class="annotation">: yt_lib.utils.app_context.RunContextStore</span>
 
         
     </div>
