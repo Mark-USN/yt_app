@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from typing import NotRequired, TypedDict
 from tkinter import StringVar
 from yt_lib.utils.log_utils import get_logger
-from lib.app_context import RunContextStore
+from yt_lib.utils.app_context import RunContextStore
 
 logger = get_logger(__name__)
 

@@ -1,6 +1,6 @@
 [project]
 name = "yt-app"
-version = "0.2.0"
+version = "0.2.1"
 description = "Retrieve YouTube Transcripts"
 readme = "README.md"
 requires-python = ">=3.12"

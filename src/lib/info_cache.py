@@ -10,12 +10,12 @@ from tempfile import NamedTemporaryFile
 from yt_lib.yt_ids import YoutubeIdKind, extract_video_id
 from yt_lib.ytdlp_info import (
                                 YtdlpInfo,
-                                fetch_YtdlpInfo_object,
+                                fetch_ytdlp_info,
                                 write_info,
-                                read_YtdlpInfo
+                                read_ytdlp_info
                             )
 from yt_lib.utils.log_utils import get_logger
-from .app_context import RunContextStore
+from yt_lib.utils.app_context import RunContextStore
 
 
 logger = get_logger(__name__)
@@ -116,7 +116,7 @@ class InfoManager:
             if not p.is_file():
                 continue
             try:
-                info = read_YtdlpInfo(p)
+                info = read_ytdlp_info(p)
                 yt_source: YouTubeSource = YouTubeSource.from_ytdlpinfo(info=asdict(info))
                 entries.append((p.stat().st_mtime, yt_source))
             except OSError:
@@ -144,7 +144,7 @@ class InfoManager:
         latest_file = self.get_latest_file()
         if not latest_file or not latest_file.is_file():
             return None
-        return read_YtdlpInfo(latest_file)
+        return read_ytdlp_info(latest_file)
 
     # ----------------------------
     # File naming + stale cleanup
@@ -294,12 +294,12 @@ class InfoManager:
                         try:
                             info_file.touch()  # update mtime to reflect recent access
                             self.refresh_index()  # re-sort index after mtime update
-                            return read_YtdlpInfo(info_file)
+                            return read_ytdlp_info(info_file)
                         except Exception as e:  # pylint: disable=broad-exception-caught
                             logger.warning("Error reading metadata from %s: %s", info_file, e)
                             break  # fallback to fetching fresh metadata
             # If we didn’t find a valid cache entry, fetch fresh metadata.
-            new_info: YtdlpInfo = fetch_YtdlpInfo_object(url)
+            new_info: YtdlpInfo = fetch_ytdlp_info(url)
             self.cache_ytdlpinfo(new_info)
             return new_info
 

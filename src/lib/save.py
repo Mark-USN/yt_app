@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from yt_lib.utils.log_utils import get_logger
-from lib.app_context import RunContextStore
+from yt_lib.utils.app_context import RunContextStore
 from lib.ui_vars import UiVars
 
 logger = get_logger(__name__)

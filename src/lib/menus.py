@@ -9,7 +9,7 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import Menu, filedialog, messagebox    
 from yt_lib.utils.log_utils import get_logger
-from lib.app_context import RunContextStore
+from yt_lib.utils.app_context import RunContextStore
 from lib.ui_vars import UiVars
 from lib.save import FileSaver
 from lib.print.print_dialog import PrintDialog

@@ -14,7 +14,7 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk, Text
 from yt_lib.utils.log_utils import configure_logging, LogConfig, FileLogConfig, get_logger
-from lib.app_context import create_runtime_context, RunContextStore
+from yt_lib.utils.app_context import create_user_runtime_context, RunContextStore
 from lib.info_cache import InfoManager
 from lib.ui_vars import UiVars, is_valid_youtube_url
 from lib.history_dialog import HistoryDialog
@@ -32,7 +32,7 @@ APP_AUTHOR = "HenCode"
 ################################################################################
 
 
-ctx = create_runtime_context(app_name = APP_NAME, app_author = APP_AUTHOR)
+ctx = create_user_runtime_context(app_name = APP_NAME, app_author = APP_AUTHOR)
 ctx_store = RunContextStore(ctx=ctx)
 
 ###############################################################################

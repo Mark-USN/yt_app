@@ -9,7 +9,7 @@ from tkinter import ttk, StringVar, DoubleVar, Toplevel, filedialog, messagebox
 from reportlab.lib.pagesizes import letter
 
 from lib.ui_vars import UiVars, UiDoc
-from lib.app_context import RunContextStore
+from yt_lib.utils.app_context import RunContextStore
 from lib.print.constants import COMMON_FONT_SIZES
 from lib.print.pdf_backend import write_pdf, PDF_FONT_NAMES
 

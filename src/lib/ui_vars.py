@@ -11,7 +11,7 @@ from yt_lib.yt_ids import extract_video_id
 from yt_lib.yt_transcript import youtube_json # , youtube_text, youtube_sentences
 from yt_lib.ytdlp_info import YtdlpInfo
 from yt_lib.utils.log_utils import get_logger
-from lib.app_context import RunContextStore
+from yt_lib.utils.app_context import RunContextStore
 from lib.info_cache import InfoManager
 from lib.format_transcript import json_to_sentences, json_to_text, convert_json
 from lib.display_field import DisplayField, DurationField, FileSizeField
