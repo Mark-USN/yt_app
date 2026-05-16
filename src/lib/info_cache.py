@@ -15,7 +15,7 @@ from yt_lib.ytdlp_info import (
                                 read_ytdlp_info
                             )
 from yt_lib.utils.log_utils import get_logger
-from yt_lib.utils.app_context import RunContextStore
+from yt_lib.utils.app_context import RuntimeContext
 
 
 logger = get_logger(__name__)
@@ -95,10 +95,10 @@ class InfoManager:
     """
 
     # def __init__(self, *, app_name: str = "transcripts", start: Path | None = None) -> None:
-    def __init__(self,rt_ctx_store: RunContextStore) -> None:
-        """ Initialize the InfoManager with a reference to the RunContextStore for path management.
+    def __init__(self,rt_ctx_store: RuntimeContext) -> None:
+        """ Initialize the InfoManager with a reference to the RuntimeContext for path management.
             Args:
-                rt_ctx_store: The RunContextStore object that holds the application's paths.
+                rt_ctx_store: The RuntimeContext object that holds the application's paths.
         """
         self.ctx_store = rt_ctx_store
         self.cache_dir: Path = self.ctx_store.cache_dir

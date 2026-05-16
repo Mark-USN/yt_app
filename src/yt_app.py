@@ -10,11 +10,11 @@ and display metadata + transcript in a GUI.
 """
 
 from __future__ import annotations
-
+from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, Text
 from yt_lib.utils.log_utils import configure_logging, LogConfig, FileLogConfig, get_logger
-from yt_lib.utils.app_context import create_user_runtime_context, RunContextStore
+from yt_lib.utils.app_context import create_user_context, RuntimeContext
 from lib.info_cache import InfoManager
 from lib.ui_vars import UiVars, is_valid_youtube_url
 from lib.history_dialog import HistoryDialog
@@ -32,8 +32,9 @@ APP_AUTHOR = "HenCode"
 ################################################################################
 
 
-ctx = create_user_runtime_context(app_name = APP_NAME, app_author = APP_AUTHOR)
-ctx_store = RunContextStore(ctx=ctx)
+ctx = create_user_context(app_name = APP_NAME, app_author = APP_AUTHOR,
+                          app_dir = Path(__file__).parent)
+ctx_store = RuntimeContext(ctx=ctx)
 
 ###############################################################################
 #
@@ -42,11 +43,11 @@ ctx_store = RunContextStore(ctx=ctx)
 #
 ################################################################################
 
-log_cfg = LogConfig(root=APP_NAME)
-file_log_conf = FileLogConfig(path = ctx_store.log_dir / "yt_app.log")
+log_cfg = LogConfig(log_root=APP_NAME)
+file_log_conf = FileLogConfig(log_file = ctx_store.log_dir / "yt_app.log")
 
 configure_logging(cfg=log_cfg,
-                  file=file_log_conf,
+                  file_log_conf=file_log_conf,
                   force=True,
                   tee_console=False
                 )
@@ -112,7 +113,7 @@ def main() -> None:
     for c in range(4):
         info_frame.columnconfigure(c, weight=1)
     # Uses the DisplayField class which combines the field's label, value, and formatting logic
-    # into a single object that can be easily displayed in the UI. Each field is bound to a 
+    # into a single object that can be easily displayed in the UI. Each field is bound to a
     # StringVar that updates automatically when the field's value changes.
     # The info frame is organized into rows and columns to display the video metadata in a clear
     # and structured way.
@@ -177,9 +178,8 @@ def main() -> None:
         value="Sentences",
     ).grid(column=0, row=4, sticky="w", padx=6)
 
-
     # -------------------------------------------------------------------------
-    # Description: shows the video description metadata, which is often useful 
+    # Description: shows the video description metadata, which is often useful
     #   context for understanding the transcript. It is freeform and can
     #   contain nothing, or a lot of text, so it is in a scrollable Text widget.
     # -------------------------------------------------------------------------
@@ -197,8 +197,8 @@ def main() -> None:
     ui_vars.set_desc_widget(txt_dscr)
 
     # -------------------------------------------------------------------------
-    # Transcript: shows the transcript text in a scrollable Text widget. 
-    #   The content and formatting of the transcript are selectable via the 
+    # Transcript: shows the transcript text in a scrollable Text widget.
+    #   The content and formatting of the transcript are selectable via the
     #   "Transcript type" radio buttons, which update the transcript_type field
     #   in the info section and trigger a reload of the transcript content.
     # -------------------------------------------------------------------------

@@ -7,9 +7,9 @@ from __future__ import annotations
 
 from pathlib import Path
 import tkinter as tk
-from tkinter import Menu, filedialog, messagebox    
+from tkinter import Menu, filedialog, messagebox
 from yt_lib.utils.log_utils import get_logger
-from yt_lib.utils.app_context import RunContextStore
+from yt_lib.utils.app_context import RuntimeContext
 from lib.ui_vars import UiVars
 from lib.save import FileSaver
 from lib.print.print_dialog import PrintDialog
@@ -30,13 +30,13 @@ class MenuCommands:
     def __init__(
         self,
         root: tk.Misc,
-        ctx: RunContextStore,
+        ctx: RuntimeContext,
         ui: UiVars,
     ) -> None:
         """ Initialize the MenuCommands object.
             Args:
                 root: The root Tkinter window.
-                ctx: The RunContextStore object that holds the application's paths.
+                ctx: The RuntimeContext object that holds the application's paths.
                 ui: The UiVars object that holds the application's UI variables.
         """
         self.win = root

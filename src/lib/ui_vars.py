@@ -6,12 +6,12 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 import tkinter as tk
-from tkinter import StringVar, Text 
+from tkinter import StringVar, Text
 from yt_lib.yt_ids import extract_video_id
-from yt_lib.yt_transcript import youtube_json # , youtube_text, youtube_sentences
+from yt_lib.yt_transcript import yt_json, set_context # , youtube_text, youtube_sentences
 from yt_lib.ytdlp_info import YtdlpInfo
 from yt_lib.utils.log_utils import get_logger
-from yt_lib.utils.app_context import RunContextStore
+from yt_lib.utils.app_context import RuntimeContext
 from lib.info_cache import InfoManager
 from lib.format_transcript import json_to_sentences, json_to_text, convert_json
 from lib.display_field import DisplayField, DurationField, FileSizeField
@@ -46,7 +46,7 @@ def is_valid_youtube_url(text: str) -> bool:
 # @dataclass(slots=True)
 class UiVars:
     """ Holds all Tk variables that widgets bind to, and knows how to apply metadata to them.
-        Also holds references to the RunContextStore, to determine file paths, and the InfoManager
+        Also holds references to the RuntimeContext, to determine file paths, and the InfoManager
         (cache), to get metadata for URLs.
 
         NOTE: The Discription and Transcript Text widgets are not stored as Tk variables, because
@@ -61,7 +61,7 @@ class UiVars:
         render method.
     """
     root: tk
-    ctx: RunContextStore
+    ctx: RuntimeContext
     cache: InfoManager
     combo_url: StringVar
     transcript_rb: StringVar
@@ -87,18 +87,19 @@ class UiVars:
     def __init__(
             self,
             root: tk.Misc,
-            ctx: RunContextStore,
+            ctx: RuntimeContext,
             cache: InfoManager,
         ) -> None:
         """ Initialize all variables and references.
             Args:
                 root: The Tk root window, needed to create Tk variables.
-                ctx: The RunContextStore, to determine file paths.
+                ctx: The RuntimeContext, to determine file paths.
                 cache: The InfoManager, to get metadata for URLs.        
         """
         self.win = root
         self.ctx = ctx
         self.cache = cache
+        set_context(self.ctx)
 
         self.combo_url = StringVar(self.win, "")
         self.transcript_rb = StringVar(self.win, "Json")
@@ -282,7 +283,7 @@ class UiVars:
             self.set_text(self.desc_widget, self.desc_txt)
         if combo_url != self.previous_url:
             self.previous_url = combo_url
-            self.transcript_json = youtube_json(combo_url)
+            self.transcript_json = yt_json(combo_url)
         # ---- transcript output ----
         match str(self.transcript_rb.get()).lower().strip():
             case "json":

@@ -152,7 +152,7 @@ class PrintDialog(Toplevel):
                 face_name = font_name,
                 point_size = font_size,
             )
-        except Exception as exc:
+        except Exception as exc:                        # pylint: disable=broad-exception-caught
             logger.error("Failed to print: %s", exc)
             messagebox.showerror("Failed to Print",
                                  f"Transcript of YouTube video {self.ui_doc.ui.video_id.get()} "

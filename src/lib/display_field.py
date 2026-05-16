@@ -13,14 +13,14 @@ from dataclasses import dataclass, field
 from typing import NotRequired, TypedDict
 from tkinter import StringVar
 from yt_lib.utils.log_utils import get_logger
-from yt_lib.utils.app_context import RunContextStore
+from yt_lib.utils.app_context import RuntimeContext
 
 logger = get_logger(__name__)
 
 
 class DisplayFieldData(TypedDict):
     """ TypedDict for initializing a DisplayField from a dictionary. """
-    ctx: RunContextStore
+    ctx: RuntimeContext
     label: str
     var: StringVar | None
     sep: NotRequired[str]
@@ -36,7 +36,7 @@ class DisplayField:
         It holds a reference to a StringVar that the UI widget binds to, and knows how to 
         format its value for display based on its metadata.
     """
-    ctx: RunContextStore
+    ctx: RuntimeContext
     label: str
     var: StringVar | None = None
     sep: str = ": "
@@ -58,7 +58,7 @@ class DisplayField:
         """ Get the underlying value of the field. 
             Returns:
                 The raw value of the field, which can be a float, int, str, or None.
-        """                
+        """
         return self._value
 
     def render(self) -> str:

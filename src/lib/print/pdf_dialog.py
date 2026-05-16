@@ -8,8 +8,8 @@ from tkinter import ttk, StringVar, DoubleVar, Toplevel, filedialog, messagebox
 
 from reportlab.lib.pagesizes import letter
 
+from yt_lib.utils.app_context import RuntimeContext
 from lib.ui_vars import UiVars, UiDoc
-from yt_lib.utils.app_context import RunContextStore
 from lib.print.constants import COMMON_FONT_SIZES
 from lib.print.pdf_backend import write_pdf, PDF_FONT_NAMES
 
@@ -29,7 +29,7 @@ class PdfDialog(Toplevel):
         self,
         parent,
         ui_vars: UiVars,
-        ctx: RunContextStore,
+        ctx: RuntimeContext,
         *,
         default_font_name: str = "Helvetica",
         default_font_size_pt: float = 10.0,

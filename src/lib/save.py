@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from yt_lib.utils.log_utils import get_logger
-from yt_lib.utils.app_context import RunContextStore
+from yt_lib.utils.app_context import RuntimeContext
 from lib.ui_vars import UiVars
 
 logger = get_logger(__name__)
@@ -24,13 +24,13 @@ class FileSaver:
     """
     def __init__(
             self,
-            ctx: RunContextStore,
+            ctx: RuntimeContext,
             ui: UiVars,
         ) -> None:
         """ Initialize the FileSaver object.
             Args:
                 root: The root Tkinter window.
-                ctx: The RunContextStore object that holds the application's paths.
+                ctx: The RuntimeContext object that holds the application's paths.
                 ui: The UiVars object that holds the application's UI variables.
         """
         self.ctx = ctx

@@ -86,7 +86,7 @@
 </span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a>
 </span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 </span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">yt_lib.utils.log_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">yt_lib.utils.app_context</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunContextStore</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">yt_lib.utils.app_context</span><span class="w"> </span><span class="kn">import</span> <span class="n">RuntimeContext</span>
 </span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">lib.ui_vars</span><span class="w"> </span><span class="kn">import</span> <span class="n">UiVars</span>
 </span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a>
 </span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -106,13 +106,13 @@
 </span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span id="L-26"><a href="#L-26"><span class="linenos"> 26</span></a>            <span class="bp">self</span><span class="p">,</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a>            <span class="n">ctx</span><span class="p">:</span> <span class="n">RunContextStore</span><span class="p">,</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a>            <span class="n">ctx</span><span class="p">:</span> <span class="n">RuntimeContext</span><span class="p">,</span>
 </span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a>            <span class="n">ui</span><span class="p">:</span> <span class="n">UiVars</span><span class="p">,</span>
 </span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a>        <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot; Initialize the FileSaver object.</span>
 </span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a><span class="sd">            Args:</span>
 </span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a><span class="sd">                root: The root Tkinter window.</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a><span class="sd">                ctx: The RunContextStore object that holds the application&#39;s paths.</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a><span class="sd">                ctx: The RuntimeContext object that holds the application&#39;s paths.</span>
 </span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a><span class="sd">                ui: The UiVars object that holds the application&#39;s UI variables.</span>
 </span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span> <span class="o">=</span> <span class="n">ctx</span>
@@ -220,13 +220,13 @@
 </span><span id="FileSaver-25"><a href="#FileSaver-25"><span class="linenos"> 25</span></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="FileSaver-26"><a href="#FileSaver-26"><span class="linenos"> 26</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span id="FileSaver-27"><a href="#FileSaver-27"><span class="linenos"> 27</span></a>            <span class="bp">self</span><span class="p">,</span>
-</span><span id="FileSaver-28"><a href="#FileSaver-28"><span class="linenos"> 28</span></a>            <span class="n">ctx</span><span class="p">:</span> <span class="n">RunContextStore</span><span class="p">,</span>
+</span><span id="FileSaver-28"><a href="#FileSaver-28"><span class="linenos"> 28</span></a>            <span class="n">ctx</span><span class="p">:</span> <span class="n">RuntimeContext</span><span class="p">,</span>
 </span><span id="FileSaver-29"><a href="#FileSaver-29"><span class="linenos"> 29</span></a>            <span class="n">ui</span><span class="p">:</span> <span class="n">UiVars</span><span class="p">,</span>
 </span><span id="FileSaver-30"><a href="#FileSaver-30"><span class="linenos"> 30</span></a>        <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="FileSaver-31"><a href="#FileSaver-31"><span class="linenos"> 31</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot; Initialize the FileSaver object.</span>
 </span><span id="FileSaver-32"><a href="#FileSaver-32"><span class="linenos"> 32</span></a><span class="sd">            Args:</span>
 </span><span id="FileSaver-33"><a href="#FileSaver-33"><span class="linenos"> 33</span></a><span class="sd">                root: The root Tkinter window.</span>
-</span><span id="FileSaver-34"><a href="#FileSaver-34"><span class="linenos"> 34</span></a><span class="sd">                ctx: The RunContextStore object that holds the application&#39;s paths.</span>
+</span><span id="FileSaver-34"><a href="#FileSaver-34"><span class="linenos"> 34</span></a><span class="sd">                ctx: The RuntimeContext object that holds the application&#39;s paths.</span>
 </span><span id="FileSaver-35"><a href="#FileSaver-35"><span class="linenos"> 35</span></a><span class="sd">                ui: The UiVars object that holds the application&#39;s UI variables.</span>
 </span><span id="FileSaver-36"><a href="#FileSaver-36"><span class="linenos"> 36</span></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="FileSaver-37"><a href="#FileSaver-37"><span class="linenos"> 37</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span> <span class="o">=</span> <span class="n">ctx</span>
@@ -313,7 +313,7 @@ and perform the menu actions.</p>
                                         <input id="FileSaver.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
-        <span class="name">FileSaver</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">ctx</span><span class="p">:</span> <span class="n">yt_lib</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">app_context</span><span class="o">.</span><span class="n">RunContextStore</span>,</span><span class="param">	<span class="n">ui</span><span class="p">:</span> <span class="n"><a href="ui_vars.html#UiVars">lib.ui_vars.UiVars</a></span></span>)</span>
+        <span class="name">FileSaver</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">ctx</span><span class="p">:</span> <span class="n">yt_lib</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">app_context</span><span class="o">.</span><span class="n">RuntimeContext</span>, </span><span class="param"><span class="n">ui</span><span class="p">:</span> <span class="n"><a href="ui_vars.html#UiVars">lib.ui_vars.UiVars</a></span></span>)</span>
 
                 <label class="view-source-button" for="FileSaver.__init__-view-source"><span>View Source</span></label>
 
@@ -321,13 +321,13 @@ and perform the menu actions.</p>
     <a class="headerlink" href="#FileSaver.__init__"></a>
             <div class="pdoc-code codehilite"><pre><span></span><span id="FileSaver.__init__-26"><a href="#FileSaver.__init__-26"><span class="linenos">26</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span id="FileSaver.__init__-27"><a href="#FileSaver.__init__-27"><span class="linenos">27</span></a>            <span class="bp">self</span><span class="p">,</span>
-</span><span id="FileSaver.__init__-28"><a href="#FileSaver.__init__-28"><span class="linenos">28</span></a>            <span class="n">ctx</span><span class="p">:</span> <span class="n">RunContextStore</span><span class="p">,</span>
+</span><span id="FileSaver.__init__-28"><a href="#FileSaver.__init__-28"><span class="linenos">28</span></a>            <span class="n">ctx</span><span class="p">:</span> <span class="n">RuntimeContext</span><span class="p">,</span>
 </span><span id="FileSaver.__init__-29"><a href="#FileSaver.__init__-29"><span class="linenos">29</span></a>            <span class="n">ui</span><span class="p">:</span> <span class="n">UiVars</span><span class="p">,</span>
 </span><span id="FileSaver.__init__-30"><a href="#FileSaver.__init__-30"><span class="linenos">30</span></a>        <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="FileSaver.__init__-31"><a href="#FileSaver.__init__-31"><span class="linenos">31</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot; Initialize the FileSaver object.</span>
 </span><span id="FileSaver.__init__-32"><a href="#FileSaver.__init__-32"><span class="linenos">32</span></a><span class="sd">            Args:</span>
 </span><span id="FileSaver.__init__-33"><a href="#FileSaver.__init__-33"><span class="linenos">33</span></a><span class="sd">                root: The root Tkinter window.</span>
-</span><span id="FileSaver.__init__-34"><a href="#FileSaver.__init__-34"><span class="linenos">34</span></a><span class="sd">                ctx: The RunContextStore object that holds the application&#39;s paths.</span>
+</span><span id="FileSaver.__init__-34"><a href="#FileSaver.__init__-34"><span class="linenos">34</span></a><span class="sd">                ctx: The RuntimeContext object that holds the application&#39;s paths.</span>
 </span><span id="FileSaver.__init__-35"><a href="#FileSaver.__init__-35"><span class="linenos">35</span></a><span class="sd">                ui: The UiVars object that holds the application&#39;s UI variables.</span>
 </span><span id="FileSaver.__init__-36"><a href="#FileSaver.__init__-36"><span class="linenos">36</span></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="FileSaver.__init__-37"><a href="#FileSaver.__init__-37"><span class="linenos">37</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span> <span class="o">=</span> <span class="n">ctx</span>
@@ -338,7 +338,7 @@ and perform the menu actions.</p>
             <div class="docstring"><p>Initialize the FileSaver object.
 Args:
     root: The root Tkinter window.
-    ctx: The RunContextStore object that holds the application's paths.
+    ctx: The RuntimeContext object that holds the application's paths.
     ui: The UiVars object that holds the application's UI variables.</p>
 </div>
 

@@ -1,9 +1,9 @@
 [project]
 name = "yt-app"
-version = "0.2.1"
+version = "0.2.5"
 description = "Retrieve YouTube Transcripts"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
     "pylint>=4.0.4",
     "yt-lib",
